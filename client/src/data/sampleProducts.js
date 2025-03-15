@@ -1,0 +1,335 @@
+// Sample products data for demonstration purposes
+const sampleProducts = [
+  {
+    id: 'p1',
+    name: '818 Tequila Blanco',
+    description: 'Hand-picked by jimadores. Slow roasted in adobe brick ovens. Aged in American oak barrels.',
+    price: 75.00,
+    images: ['https://web-assets.same.dev/1985471812/3013702058.jpeg'],
+    stock: 15,
+    sku: 'TEQ-818-BL',
+    isActive: true,
+    isHot: true,
+    dateAdded: '2023-05-15',
+    dateModified: '2023-05-15',
+    categoryIds: ['spirits'],
+    brandId: '818-tequila',
+    typeIds: ['tequila', 'blanco'],
+    countryId: 'mexico',
+    attributes: {
+      alcohol_percentage: 40,
+      volume_ml: 750,
+      awards: ['Best Tequila 2022']
+    }
+  },
+  {
+    id: 'p2',
+    name: '818 Tequila Reposado',
+    description: 'Aged in American oak barrels for 2-12 months, giving it a smooth, rich flavor.',
+    price: 85.00,
+    images: ['https://web-assets.same.dev/1214273369/2625015867.jpeg'],
+    stock: 8,
+    sku: 'TEQ-818-REP',
+    isActive: true,
+    isHot: true,
+    dateAdded: '2023-05-15',
+    dateModified: '2023-05-15',
+    categoryIds: ['spirits'],
+    brandId: '818-tequila',
+    typeIds: ['tequila', 'reposado'],
+    countryId: 'mexico',
+    attributes: {
+      alcohol_percentage: 40,
+      volume_ml: 750,
+      aging_months: 8
+    }
+  },
+  {
+    id: 'p3',
+    name: 'Château Margaux 2015',
+    description: 'Premier Grand Cru Classé from Bordeaux, France. Exceptional vintage with rich, complex flavors.',
+    price: 1250.00,
+    images: ['https://web-assets.same.dev/3676876019/561983296.jpeg'],
+    stock: 3,
+    sku: 'WINE-CM-2015',
+    isActive: true,
+    isHot: true,
+    dateAdded: '2023-06-10',
+    dateModified: '2023-06-10',
+    categoryIds: ['wine'],
+    brandId: 'chateau-margaux',
+    typeIds: ['red', 'bordeaux'],
+    countryId: 'france',
+    attributes: {
+      alcohol_percentage: 13.5,
+      volume_ml: 750,
+      vintage: 2015,
+      grape_varieties: ['Cabernet Sauvignon', 'Merlot', 'Petit Verdot', 'Cabernet Franc']
+    }
+  },
+  {
+    id: 'p4',
+    name: 'Dom Pérignon Vintage 2012',
+    description: 'Prestigious champagne with exceptional balance and complexity.',
+    price: 220.00,
+    images: ['https://web-assets.same.dev/282457355/677014880.jpeg'],
+    stock: 6,
+    sku: 'CHAMP-DP-2012',
+    isActive: true,
+    isHot: true,
+    dateAdded: '2023-06-15',
+    dateModified: '2023-06-15',
+    categoryIds: ['wine', 'champagne'],
+    brandId: 'dom-perignon',
+    typeIds: ['sparkling', 'champagne'],
+    countryId: 'france',
+    attributes: {
+      alcohol_percentage: 12.5,
+      volume_ml: 750,
+      vintage: 2012
+    }
+  },
+  {
+    id: 'p5',
+    name: 'Macallan 18 Year Sherry Oak',
+    description: 'Matured in exceptional sherry seasoned oak casks from Jerez, Spain.',
+    price: 350.00,
+    images: ['https://web-assets.same.dev/1330601140/485806587.jpeg'],
+    stock: 4,
+    sku: 'WHSK-MAC-18',
+    isActive: true,
+    isHot: true,
+    dateAdded: '2023-07-01',
+    dateModified: '2023-07-01',
+    categoryIds: ['spirits'],
+    brandId: 'macallan',
+    typeIds: ['whisky', 'scotch', 'single-malt'],
+    countryId: 'scotland',
+    attributes: {
+      alcohol_percentage: 43,
+      volume_ml: 750,
+      age_years: 18,
+      cask_type: 'Sherry Oak'
+    }
+  },
+  {
+    id: 'p6',
+    name: 'Grey Goose Vodka',
+    description: 'Premium French vodka made with the finest ingredients.',
+    price: 45.00,
+    images: ['https://web-assets.same.dev/856443968/2373395576.jpeg'],
+    stock: 20,
+    sku: 'VOD-GG-ORG',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-07-05',
+    dateModified: '2023-07-05',
+    categoryIds: ['spirits'],
+    brandId: 'grey-goose',
+    typeIds: ['vodka'],
+    countryId: 'france',
+    attributes: {
+      alcohol_percentage: 40,
+      volume_ml: 750
+    }
+  },
+  {
+    id: 'p7',
+    name: 'Heineken Lager Beer - 24 Pack',
+    description: 'Premium lager beer with a balanced taste and subtle fruity notes.',
+    price: 32.99,
+    images: ['https://web-assets.same.dev/2434705900/2183896642.jpeg'],
+    stock: 30,
+    sku: 'BEER-HEI-24PK',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-07-10',
+    dateModified: '2023-07-10',
+    categoryIds: ['beer'],
+    brandId: 'heineken',
+    typeIds: ['lager', 'imported'],
+    countryId: 'netherlands',
+    attributes: {
+      alcohol_percentage: 5,
+      volume_ml: 330,
+      pack_size: 24
+    }
+  },
+  {
+    id: 'p8',
+    name: 'Guinness Draught - 6 Pack',
+    description: 'Iconic Irish stout with a rich, creamy head and velvety finish.',
+    price: 12.99,
+    images: ['https://web-assets.same.dev/3237504018/683900238.jpeg'],
+    stock: 25,
+    sku: 'BEER-GUI-6PK',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-07-15',
+    dateModified: '2023-07-15',
+    categoryIds: ['beer'],
+    brandId: 'guinness',
+    typeIds: ['stout', 'imported'],
+    countryId: 'ireland',
+    attributes: {
+      alcohol_percentage: 4.2,
+      volume_ml: 440,
+      pack_size: 6
+    }
+  },
+  {
+    id: 'p9',
+    name: 'Veuve Clicquot Brut Yellow Label',
+    description: 'Iconic champagne known for its consistency and quality.',
+    price: 65.00,
+    images: ['https://web-assets.same.dev/2607398782/3925610433.jpeg'],
+    stock: 12,
+    sku: 'CHAMP-VC-YL',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-08-01',
+    dateModified: '2023-08-01',
+    categoryIds: ['wine', 'champagne'],
+    brandId: 'veuve-clicquot',
+    typeIds: ['sparkling', 'champagne'],
+    countryId: 'france',
+    attributes: {
+      alcohol_percentage: 12,
+      volume_ml: 750
+    }
+  },
+  {
+    id: 'p10',
+    name: 'Hendrick\'s Gin',
+    description: 'Small batch gin infused with rose and cucumber.',
+    price: 38.99,
+    images: ['https://web-assets.same.dev/1985471812/3013702058.jpeg'],
+    stock: 18,
+    sku: 'GIN-HEN-ORG',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-08-05',
+    dateModified: '2023-08-05',
+    categoryIds: ['spirits'],
+    brandId: 'hendricks',
+    typeIds: ['gin'],
+    countryId: 'scotland',
+    attributes: {
+      alcohol_percentage: 44,
+      volume_ml: 750,
+      botanicals: ['Juniper', 'Cucumber', 'Rose']
+    }
+  },
+  {
+    id: 'p11',
+    name: 'Caymus Cabernet Sauvignon 2019',
+    description: 'Bold Napa Valley Cabernet with rich fruit flavors and smooth tannins.',
+    price: 89.99,
+    images: ['https://web-assets.same.dev/3676876019/561983296.jpeg'],
+    stock: 9,
+    sku: 'WINE-CAY-CAB19',
+    isActive: true,
+    isHot: true,
+    dateAdded: '2023-08-10',
+    dateModified: '2023-08-10',
+    categoryIds: ['wine'],
+    brandId: 'caymus',
+    typeIds: ['red', 'cabernet-sauvignon'],
+    countryId: 'usa',
+    attributes: {
+      alcohol_percentage: 14.5,
+      volume_ml: 750,
+      vintage: 2019,
+      region: 'Napa Valley'
+    }
+  },
+  {
+    id: 'p12',
+    name: 'Kim Crawford Sauvignon Blanc',
+    description: 'Vibrant and crisp New Zealand Sauvignon Blanc with tropical fruit notes.',
+    price: 19.99,
+    images: ['https://web-assets.same.dev/2607398782/3925610433.jpeg'],
+    stock: 24,
+    sku: 'WINE-KC-SB',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-08-15',
+    dateModified: '2023-08-15',
+    categoryIds: ['wine'],
+    brandId: 'kim-crawford',
+    typeIds: ['white', 'sauvignon-blanc'],
+    countryId: 'new-zealand',
+    attributes: {
+      alcohol_percentage: 13,
+      volume_ml: 750,
+      region: 'Marlborough'
+    }
+  },
+  {
+    id: 'p13',
+    name: 'Patrón Silver Tequila',
+    description: 'Ultra-premium silver tequila with a smooth, sweet taste.',
+    price: 55.99,
+    images: ['https://web-assets.same.dev/1985471812/3013702058.jpeg'],
+    stock: 16,
+    sku: 'TEQ-PAT-SIL',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-09-01',
+    dateModified: '2023-09-01',
+    categoryIds: ['spirits'],
+    brandId: 'patron',
+    typeIds: ['tequila', 'blanco'],
+    countryId: 'mexico',
+    attributes: {
+      alcohol_percentage: 40,
+      volume_ml: 750
+    }
+  },
+  {
+    id: 'p14',
+    name: 'Stella Artois - 12 Pack',
+    description: 'Premium Belgian lager with a full, characteristic flavor.',
+    price: 18.99,
+    images: ['https://web-assets.same.dev/2434705900/2183896642.jpeg'],
+    stock: 28,
+    sku: 'BEER-STA-12PK',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-09-05',
+    dateModified: '2023-09-05',
+    categoryIds: ['beer'],
+    brandId: 'stella-artois',
+    typeIds: ['lager', 'imported'],
+    countryId: 'belgium',
+    attributes: {
+      alcohol_percentage: 5.2,
+      volume_ml: 330,
+      pack_size: 12
+    }
+  },
+  {
+    id: 'p15',
+    name: 'Woodford Reserve Bourbon',
+    description: 'Small batch Kentucky straight bourbon whiskey with over 200 flavor notes.',
+    price: 42.99,
+    images: ['https://web-assets.same.dev/1330601140/485806587.jpeg'],
+    stock: 14,
+    sku: 'WHSK-WR-BOU',
+    isActive: true,
+    isHot: false,
+    dateAdded: '2023-09-10',
+    dateModified: '2023-09-10',
+    categoryIds: ['spirits'],
+    brandId: 'woodford-reserve',
+    typeIds: ['whisky', 'bourbon'],
+    countryId: 'usa',
+    attributes: {
+      alcohol_percentage: 45.2,
+      volume_ml: 750,
+      distillery: 'Woodford Reserve Distillery'
+    }
+  }
+];
+
+export default sampleProducts; 
