@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom'
+import { ProductGrid, Pagination } from '../components/ui'
+import { formatPrice } from '../utils/formatters'
 
 const ProductsPage = () => {
   const location = useLocation()
@@ -10,6 +12,7 @@ const ProductsPage = () => {
   const [filteredProducts, setFilteredProducts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortOption, setSortOption] = useState('default');
   const productsPerPage = 9
   const [selectedFilters, setSelectedFilters] = useState({
     categories: [],
@@ -30,6 +33,29 @@ const ProductsPage = () => {
     brand,
     subcategory
   });
+
+  const toggleViewMode = () => {
+    setViewMode((prevMode) => (prevMode === 'grid' ? 'list' : 'grid'));
+  };
+
+
+
+  const sortProducts = (products) => {
+    switch (sortOption) {
+      case 'price-asc':
+        return products.sort((a, b) => a.price - b.price);
+      case 'price-desc':
+        return products.sort((a, b) => b.price - a.price);
+      case 'popularity':
+        // Assuming you have a popularity metric
+        return products.sort((a, b) => b.popularity - a.popularity);
+      case 'latest':
+        // Assuming you have a date or timestamp
+        return products.sort((a, b) => new Date(b.date) - new Date(a.date));
+      default:
+        return products; // Default sorting logic
+    }
+  };
 
   // Category structure with types
   const categoryStructure = {
@@ -235,7 +261,7 @@ const ProductsPage = () => {
     if (subcat) {
       const params = new URLSearchParams(path.includes('?') ? path.split('?')[1] : '');
       params.set('za', subcat);
-      path = path.includes('?') 
+      path = path.includes('?')
         ? `${path.split('?')[0]}?${params.toString()}`
         : `${path}?${params.toString()}`;
     }
@@ -244,7 +270,7 @@ const ProductsPage = () => {
     if (newBrand) {
       const params = new URLSearchParams(path.includes('?') ? path.split('?')[1] : '');
       params.set('brand', newBrand);
-      path = path.includes('?') 
+      path = path.includes('?')
         ? `${path.split('?')[0]}?${params.toString()}`
         : `${path}?${params.toString()}`;
     }
@@ -257,7 +283,7 @@ const ProductsPage = () => {
   const handleTypeClick = (typeId) => {
     // Toggle type selection
     const newType = selectedFilters.type === typeId ? null : typeId;
-    
+
     // Preserve existing categories and brand
     setSelectedFilters(prev => ({
       ...prev,
@@ -283,7 +309,7 @@ const ProductsPage = () => {
     if (newType) {
       const params = new URLSearchParams(path.includes('?') ? path.split('?')[1] : '');
       params.set('za', newType);
-      path = path.includes('?') 
+      path = path.includes('?')
         ? `${path.split('?')[0]}?${params.toString()}`
         : `${path}?${params.toString()}`;
     }
@@ -292,7 +318,7 @@ const ProductsPage = () => {
     if (selectedFilters.brand) {
       const params = new URLSearchParams(path.includes('?') ? path.split('?')[1] : '');
       params.set('brand', selectedFilters.brand);
-      path = path.includes('?') 
+      path = path.includes('?')
         ? `${path.split('?')[0]}?${params.toString()}`
         : `${path}?${params.toString()}`;
     }
@@ -305,7 +331,7 @@ const ProductsPage = () => {
   const handleBrandClick = (brandId) => {
     // Toggle brand selection
     const newBrand = selectedFilters.brand === brandId ? null : brandId;
-    
+
     // Preserve existing categories and type
     setSelectedFilters(prev => ({
       ...prev,
@@ -319,19 +345,19 @@ const ProductsPage = () => {
     let path;
     if (newBrand) {
       path = `/brand/${newBrand}`;
-      
+
       // Add categories as query params if present
       if (selectedFilters.categories.length > 0) {
         const params = new URLSearchParams();
         params.set('categories', selectedFilters.categories.join(','));
         path = `${path}?${params.toString()}`;
       }
-      
+
       // Add type if present
       if (selectedFilters.type) {
         const params = new URLSearchParams(path.includes('?') ? path.split('?')[1] : '');
         params.set('za', selectedFilters.type);
-        path = path.includes('?') 
+        path = path.includes('?')
           ? `${path.split('?')[0]}?${params.toString()}`
           : `${path}?${params.toString()}`;
       }
@@ -346,12 +372,12 @@ const ProductsPage = () => {
       } else {
         path = '/shop';
       }
-      
+
       // Add type if present
       if (selectedFilters.type) {
         const params = new URLSearchParams(path.includes('?') ? path.split('?')[1] : '');
         params.set('za', selectedFilters.type);
-        path = path.includes('?') 
+        path = path.includes('?')
           ? `${path.split('?')[0]}?${params.toString()}`
           : `${path}?${params.toString()}`;
       }
@@ -363,7 +389,7 @@ const ProductsPage = () => {
 
   // Get accurate count of products for each category based on current filters
   const getCategoryCount = (categoryId) => {
-    return products.filter(product => 
+    return products.filter(product =>
       product.category === categoryId &&
       (!selectedFilters.brand || product.brand === selectedFilters.brand) &&
       (!selectedFilters.type || product.type === selectedFilters.type)
@@ -372,7 +398,7 @@ const ProductsPage = () => {
 
   // Get accurate count of products for each type based on current filters
   const getTypeCount = (typeId) => {
-    return products.filter(product => 
+    return products.filter(product =>
       (selectedFilters.categories.length === 0 || selectedFilters.categories.includes(product.category)) &&
       product.type === typeId &&
       (!selectedFilters.brand || product.brand === selectedFilters.brand)
@@ -381,7 +407,7 @@ const ProductsPage = () => {
 
   // Get accurate count of products for each brand based on current filters
   const getBrandCount = (brandId) => {
-    return products.filter(product => 
+    return products.filter(product =>
       (selectedFilters.categories.length === 0 || selectedFilters.categories.includes(product.category)) &&
       (!selectedFilters.type || product.type === selectedFilters.type) &&
       product.brand === brandId
@@ -397,14 +423,14 @@ const ProductsPage = () => {
         if (category.types) {
           category.types.forEach(type => {
             if (!allTypes.some(t => t.id === type.id) && getTypeCount(type.id) > 0) {
-              allTypes.push({...type, count: getTypeCount(type.id)});
+              allTypes.push({ ...type, count: getTypeCount(type.id) });
             }
           });
         }
       });
       return allTypes;
     }
-    
+
     // Get types for selected categories
     const types = [];
     selectedFilters.categories.forEach(categoryId => {
@@ -413,7 +439,7 @@ const ProductsPage = () => {
           if (!types.some(t => t.id === type.id)) {
             const count = getTypeCount(type.id);
             if (count > 0) {
-              types.push({...type, count});
+              types.push({ ...type, count });
             }
           }
         });
@@ -431,17 +457,17 @@ const ProductsPage = () => {
         const count = getBrandCount(brand.id);
         return count > 0;
       }
-      
+
       // Check if brand has products in selected categories with current type filter
-      const hasProductsInSelectedCategories = brand.categories.some(cat => 
+      const hasProductsInSelectedCategories = brand.categories.some(cat =>
         selectedFilters.categories.includes(cat)
       );
-      
+
       if (hasProductsInSelectedCategories) {
         const count = getBrandCount(brand.id);
         return count > 0;
       }
-      
+
       return false;
     }).map(brand => ({
       ...brand,
@@ -452,22 +478,22 @@ const ProductsPage = () => {
   // Update selected filters based on URL parameters
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    
+
     // Parse categories
     const categoriesParam = params.get('categories');
     const categories = categoriesParam ? categoriesParam.split(',') : [];
-    
+
     // Parse type
     const type = params.get('za') || params.get('a-zzz') || params.get('type') || null;
-    
+
     // Parse brand
     const brandParam = params.get('brand') || null;
-    
+
     // Update filters based on URL params
-    setSelectedFilters({ 
-      categories: category ? [category] : categories, 
-      type: subcategory || type, 
-      brand: brand || brandParam 
+    setSelectedFilters({
+      categories: category ? [category] : categories,
+      type: subcategory || type,
+      brand: brand || brandParam
     });
 
     // Reset to first page when URL changes
@@ -488,12 +514,12 @@ const ProductsPage = () => {
 
   // Filter products based on URL parameters
   useEffect(() => {
-    console.log('Filter effect running with:', { 
+    console.log('Filter effect running with:', {
       selectedFilters,
-      category, 
-      subcategory, 
-      tag, 
-      brand 
+      category,
+      subcategory,
+      tag,
+      brand
     });
 
     // Set loading state
@@ -512,7 +538,7 @@ const ProductsPage = () => {
         filtered = filtered.filter(product =>
           selectedFilters.categories.includes(product.category)
         );
-        
+
         if (selectedFilters.categories.length === 1) {
           const categoryId = selectedFilters.categories[0];
           title = categoryStructure[categoryId]?.name || categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
@@ -526,7 +552,7 @@ const ProductsPage = () => {
         filtered = filtered.filter(product =>
           product.type && product.type.toLowerCase() === selectedFilters.type.toLowerCase()
         );
-        
+
         // Find the type name for the title
         if (selectedFilters.categories.length === 1) {
           const categoryId = selectedFilters.categories[0];
@@ -552,7 +578,7 @@ const ProductsPage = () => {
         filtered = filtered.filter(product =>
           product.brand === selectedFilters.brand
         );
-        
+
         // Find the brand name for the title
         const brandObj = brandsData.find(b => b.id === selectedFilters.brand);
         if (brandObj) {
@@ -580,9 +606,10 @@ const ProductsPage = () => {
 
   // Get current products for pagination
   const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage; const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const sortedProducts = sortProducts([...filteredProducts]);
+  const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
 
   // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -667,18 +694,18 @@ const ProductsPage = () => {
                 {Object.entries(categoryStructure).map(([categoryId, categoryData]) => {
                   const count = getCategoryCount(categoryId);
                   if (count === 0 && selectedFilters.brand) return null;
-                  
+
                   return (
                     <li key={categoryId} className="flex items-center">
-                      <input 
-                        type="checkbox" 
-                        id={categoryId} 
-                        className="mr-2" 
+                      <input
+                        type="checkbox"
+                        id={categoryId}
+                        className="mr-2"
                         checked={selectedFilters.categories.includes(categoryId)}
                         onChange={() => handleCategoryClick(categoryId)}
                       />
-                      <label 
-                        htmlFor={categoryId} 
+                      <label
+                        htmlFor={categoryId}
                         className="cursor-pointer"
                       >
                         {categoryData.name.toUpperCase()} ({count})
@@ -700,7 +727,7 @@ const ProductsPage = () => {
               <ul className="space-y-2">
                 {getRelevantTypes().map(type => (
                   <li key={type.id}>
-                    <button 
+                    <button
                       onClick={() => handleTypeClick(type.id)}
                       className={`hover:text-primary ${selectedFilters.type === type.id ? 'text-primary font-bold' : ''}`}
                     >
@@ -722,7 +749,7 @@ const ProductsPage = () => {
               <ul className="space-y-2">
                 {getRelevantBrands().map(brandItem => (
                   <li key={brandItem.id}>
-                    <button 
+                    <button
                       onClick={() => handleBrandClick(brandItem.id)}
                       className={`hover:text-primary ${selectedFilters.brand === brandItem.id ? 'text-primary font-bold' : ''}`}
                     >
@@ -745,15 +772,19 @@ const ProductsPage = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <div>
-                  <select className="border border-gray-300 rounded px-2 py-1">
-                    <option>Default Sorting</option>
-                    <option>Sort by price: low to high</option>
-                    <option>Sort by price: high to low</option>
-                    <option>Sort by popularity</option>
-                    <option>Sort by latest</option>
+                  <select
+                    className="border border-gray-300 rounded px-2 py-1"
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                  >
+                    <option value="default">Default Sorting</option>
+                    <option value="price-asc">Sort by price: low to high</option>
+                    <option value="price-desc">Sort by price: high to low</option>
+                    <option value="popularity">Sort by popularity</option>
+                    <option value="latest">Sort by latest</option>
                   </select>
                 </div>
-                <div className="flex space-x-2">
+                {/* <div className="flex space-x-2">
                   <button
                     className={`p-1 border ${viewMode === 'grid' ? 'border-primary text-primary' : 'border-gray-300'}`}
                     onClick={() => setViewMode('grid')}
@@ -765,6 +796,24 @@ const ProductsPage = () => {
                   <button
                     className={`p-1 border ${viewMode === 'list' ? 'border-primary text-primary' : 'border-gray-300'}`}
                     onClick={() => setViewMode('list')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                </div> */}
+                <div className="flex space-x-2">
+                  <button
+                    className={`p-1 border ${viewMode === 'grid' ? 'border-primary text-primary' : 'border-gray-300'}`}
+                    onClick={toggleViewMode}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                  </button>
+                  <button
+                    className={`p-1 border ${viewMode === 'list' ? 'border-primary text-primary' : 'border-gray-300'}`}
+                    onClick={toggleViewMode}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -799,31 +848,16 @@ const ProductsPage = () => {
             )}
 
             {/* Product Grid - Only show when not loading and products exist */}
-            {!isLoading && viewMode === 'grid' && filteredProducts.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map(product => (
-                  <div key={product.id} className="product-card">
-                    {product.isHot && <span className="hot-badge">Hot</span>}
-                    <Link to={`/product/${product.id}`}>
-                      <img
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        className="w-full h-64 object-contain p-4"
-                      />
-                    </Link>
-                    <div className="p-4 text-center">
-                      <h3 className="font-medium mb-1 truncate hover:text-primary">
-                        <Link to={`/product/${product.id}`}>{product.name}</Link>
-                      </h3>
-                      <div className="text-lg font-bold text-primary">${product.price.toFixed(2)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {!isLoading && (
+              <ProductGrid 
+                products={currentProducts} 
+                isLoading={isLoading} 
+                viewMode={viewMode} 
+              />
             )}
 
             {/* Product List - Only show when not loading and products exist */}
-            {!isLoading && viewMode === 'list' && filteredProducts.length > 0 && (
+            {/* {!isLoading && viewMode === 'list' && filteredProducts.length > 0 && (
               <div className="space-y-6">
                 {filteredProducts.map(product => (
                   <div key={product.id} className="flex product-card">
@@ -854,30 +888,15 @@ const ProductsPage = () => {
                   </div>
                 ))}
               </div>
-            )}
+            )} */}
 
             {/* Pagination - Only show when not loading and products exist */}
             {!isLoading && filteredProducts.length > productsPerPage && (
-              <div className="flex justify-center mt-12">
-                <div className="flex space-x-2">
-                  {Array.from({ length: Math.ceil(filteredProducts.length / 9) }, (_, i) => i + 1).map(page => {
-                    if (page === 1 || page === Math.ceil(filteredProducts.length / 9) || (page >= 1 && page <= 3)) {
-                      return (
-                        <a 
-                          key={page} 
-                          href="#" 
-                          className="px-3 py-1 border border-gray-300 rounded hover:bg-primary hover:text-white hover:border-primary"
-                        >
-                          {page}
-                        </a>
-                      );
-                    } else if (page === 4 && Math.ceil(filteredProducts.length / 9) > 5) {
-                      return <span key="ellipsis" className="px-3 py-1">...</span>;
-                    }
-                    return null;
-                  })}
-                </div>
-              </div>
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={paginate} 
+              />
             )}
           </div>
         </div>

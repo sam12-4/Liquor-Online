@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Slider from 'react-slick'
+import { useCart } from '../contexts/CartContext.jsx'
+import { formatPrice } from '../utils/formatters'
 
 const ProductDetail = () => {
   const { productId } = useParams()
   const [quantity, setQuantity] = useState(1)
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { addItem } = useCart()
 
   // Mock product data - in a real app, you would fetch this based on the productId
   useEffect(() => {
@@ -90,6 +93,16 @@ const ProductDetail = () => {
     }
   }
 
+  const handleAddToCart = () => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: quantity
+    });
+  };
+
   const relatedProductsSettings = {
     dots: false,
     infinite: true,
@@ -172,7 +185,7 @@ const ProductDetail = () => {
             {/* Product Info */}
             <div>
               <h1 className="text-3xl font-serif mb-4">{product.name}</h1>
-              <div className="text-2xl text-primary font-bold mb-4">${product.price.toFixed(2)}</div>
+              <div className="text-2xl text-primary font-bold mb-4">{formatPrice(product.price)}</div>
 
               <div className="mb-6">
                 <p className="text-muted-foreground">{product.description}</p>
@@ -230,7 +243,12 @@ const ProductDetail = () => {
                       onClick={increaseQuantity}
                     >+</button>
                   </div>
-                  <button className="btn-primary py-2 px-8 uppercase">Add to cart</button>
+                  <button 
+                    className="btn-primary py-2 px-8 uppercase"
+                    onClick={handleAddToCart}
+                  >
+                    Add to cart
+                  </button>
                 </div>
               </div>
 
@@ -275,7 +293,7 @@ const ProductDetail = () => {
                     <h3 className="font-medium mb-1 truncate hover:text-primary">
                       <Link to={`/product/${relatedProduct.id}`}>{relatedProduct.name}</Link>
                     </h3>
-                    <div className="text-lg font-bold text-primary">${relatedProduct.price.toFixed(2)}</div>
+                    <div className="text-lg font-bold text-primary">{formatPrice(relatedProduct.price)}</div>
                   </div>
                 </div>
               </div>

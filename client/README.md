@@ -1,50 +1,115 @@
-# React + TypeScript + Vite
+# Liquor Online Clone - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for the Liquor Online Clone project. It is built with React, React Router, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The project follows a feature-based architecture with a clear separation of concerns:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```
+src/
+├── assets/              # Dynamic assets imported in components
+│   ├── images/          # Image assets
+│   └── styles/          # Global styles
+│
+├── components/          # Reusable components
+│   ├── common/          # Shared components
+│   ├── layout/          # Layout components
+│   └── ui/              # UI-specific components
+│
+├── features/            # Feature-based modules
+│   ├── products/        # Product-related components
+│   ├── cart/            # Cart-related components
+│   ├── checkout/        # Checkout flow
+│   └── auth/            # Authentication
+│
+├── hooks/               # Custom hooks
+│
+├── pages/               # Page components
+│
+├── services/            # API and service functions
+│   └── api/             # API client and endpoints
+│
+├── store/               # State management
+│   ├── slices/          # Redux slices
+│   ├── actions/         # Redux actions
+│   └── selectors/       # Redux selectors
+│
+├── utils/               # Utility functions
+│
+├── constants/           # App constants
+│
+├── contexts/            # React contexts
+│
+├── data/                # Mock data for development
+│
+├── App.jsx              # Main app component
+├── index.jsx            # Entry point
+└── routes.jsx           # Route definitions
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Key Features
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- Product browsing and filtering
+- Shopping cart functionality
+- User authentication
+- Checkout process
+- Responsive design
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+## Available Scripts
+
+In the project directory, you can run:
+
+### `npm start`
+
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+
+### `npm test`
+
+Launches the test runner in the interactive watch mode.
+
+### `npm run build`
+
+Builds the app for production to the `build` folder.
+
+## Component Organization
+
+### Layout Components
+
+- `Header`: Main navigation header
+- `Footer`: Site footer with links
+- `Layout`: Main layout wrapper
+- `TopBar`: Top navigation bar
+
+### UI Components
+
+- `ProductCard`: Card for displaying product information
+- `ProductGrid`: Grid for displaying multiple products
+- `Pagination`: Component for paginating through results
+
+### Common Components
+
+- `RouteDebugger`: Utility for debugging routes
+
+## Services
+
+- `api/client.js`: API client for making HTTP requests
+- `api/endpoints.js`: API endpoint definitions
+- `productService.js`: Service for product-related API calls
+
+## Hooks
+
+- `useProducts`: Hook for fetching and managing products
+
+## Contexts
+
+- `CartContext`: Context for managing the shopping cart
+
+## Utils
+
+- `formatters.js`: Utility functions for formatting data
+
+## Constants
+
+- `routes.js`: Application route definitions

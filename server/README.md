@@ -1,114 +1,211 @@
-# Liquor Online Server
+# Liquor Online Clone - Backend
 
-Backend API for the Liquor Online e-commerce platform.
+This is the backend API for the Liquor Online Clone project. It is built with Node.js, Express, and MongoDB.
 
-## Setup
+## Project Structure
 
-1. Install dependencies:
-   ```
-   npm install
-   ```
+The project follows a modular architecture with a clear separation of concerns:
 
-2. Create a `.env` file in the root directory with the following variables:
-   ```
-   PORT=5000
-   NODE_ENV=development
-   MONGO_URI=mongodb://localhost:27017/liquor-online
-   JWT_SECRET=your_jwt_secret_key
-   JWT_EXPIRE=30d
-   ```
-
-3. Start the development server:
-   ```
-   npm run dev
-   ```
+```
+src/
+├── config/              # Configuration files
+│   ├── db.js            # Database configuration
+│   └── env.js           # Environment variables
+│
+├── controllers/         # Request handlers
+│   ├── productController.js
+│   ├── categoryController.js
+│   └── ...
+│
+├── models/              # Database models
+│   ├── Product.js
+│   ├── Category.js
+│   └── ...
+│
+├── routes/              # API routes
+│   ├── productRoutes.js
+│   ├── categoryRoutes.js
+│   └── ...
+│
+├── middleware/          # Express middleware
+│   ├── auth.js
+│   ├── error.js
+│   └── ...
+│
+└── utils/               # Utility functions
+    ├── logger.js
+    └── validators.js
+```
 
 ## API Endpoints
 
 ### Products
-- `GET /api/products` - Get all products with filtering
-- `GET /api/products/:id` - Get single product by ID
-- `POST /api/products` - Create new product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product
-- `GET /api/products/filter-counts` - Get filter counts
+
+- `GET /api/products` - Get all products
+- `GET /api/products/:id` - Get product by ID
+- `GET /api/products/category/:category` - Get products by category
+- `GET /api/products/brand/:brand` - Get products by brand
+- `GET /api/products/type/:type` - Get products by type
+- `POST /api/products` - Create a new product
+- `PUT /api/products/:id` - Update a product
+- `DELETE /api/products/:id` - Delete a product
 
 ### Categories
+
 - `GET /api/categories` - Get all categories
-- `GET /api/categories/:id` - Get single category by ID
-- `GET /api/categories/slug/:slug` - Get category by slug
-- `POST /api/categories` - Create new category
-- `PUT /api/categories/:id` - Update category
-- `DELETE /api/categories/:id` - Delete category
-- `GET /api/categories/hierarchy` - Get category hierarchy
+- `GET /api/categories/:id` - Get category by ID
+- `POST /api/categories` - Create a new category
+- `PUT /api/categories/:id` - Update a category
+- `DELETE /api/categories/:id` - Delete a category
 
 ### Types
+
 - `GET /api/types` - Get all types
-- `GET /api/types/:id` - Get single type by ID
-- `GET /api/types/slug/:slug` - Get type by slug
-- `POST /api/types` - Create new type
-- `PUT /api/types/:id` - Update type
-- `DELETE /api/types/:id` - Delete type
-- `GET /api/types/category/:categoryId` - Get types by category
+- `GET /api/types/:id` - Get type by ID
+- `POST /api/types` - Create a new type
+- `PUT /api/types/:id` - Update a type
+- `DELETE /api/types/:id` - Delete a type
 
 ### Brands
+
 - `GET /api/brands` - Get all brands
-- `GET /api/brands/:id` - Get single brand by ID
-- `GET /api/brands/slug/:slug` - Get brand by slug
-- `POST /api/brands` - Create new brand
-- `PUT /api/brands/:id` - Update brand
-- `DELETE /api/brands/:id` - Delete brand
-- `GET /api/brands/category/:categoryId` - Get brands by category
+- `GET /api/brands/:id` - Get brand by ID
+- `POST /api/brands` - Create a new brand
+- `PUT /api/brands/:id` - Update a brand
+- `DELETE /api/brands/:id` - Delete a brand
+
+### Countries
+
+- `GET /api/countries` - Get all countries
+- `GET /api/countries/:id` - Get country by ID
+- `POST /api/countries` - Create a new country
+- `PUT /api/countries/:id` - Update a country
+- `DELETE /api/countries/:id` - Delete a country
+
+### Authentication
+
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login a user
+- `POST /api/auth/logout` - Logout a user
+- `GET /api/auth/me` - Get current user
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create a `.env` file with the following variables:
+   ```
+   PORT=5000
+   MONGODB_URI=mongodb://localhost:27017/liquor-online
+   JWT_SECRET=your_jwt_secret
+   ```
+4. Start the server: `npm start`
+
+## Available Scripts
+
+- `npm start` - Start the server
+- `npm run dev` - Start the server with nodemon
+- `npm test` - Run tests
 
 ## Data Models
 
 ### Product
-- name: String (required)
-- description: String (required)
-- price: Number (required)
-- images: [String]
-- stock: Number (required, default: 0)
-- sku: String (required, unique)
-- isActive: Boolean (default: true)
-- isHot: Boolean (default: false)
-- categoryIds: [ObjectId] (references Category)
-- brandId: ObjectId (references Brand)
-- typeIds: [ObjectId] (references Type)
-- countryId: ObjectId (references Country)
-- attributes: Map (custom attributes)
+
+```javascript
+{
+  id: String,
+  name: String,
+  slug: String,
+  description: String,
+  price: Number,
+  salePrice: Number,
+  image: String,
+  images: [String],
+  categoryId: String,
+  typeId: String,
+  brandId: String,
+  countryId: String,
+  isActive: Boolean,
+  isHot: Boolean,
+  isFeatured: Boolean,
+  stock: Number,
+  sku: String,
+  metadata: Object
+}
+```
 
 ### Category
-- name: String (required)
-- slug: String (required, unique)
-- description: String
-- parentId: ObjectId (references Category)
-- image: String
-- isActive: Boolean (default: true)
-- displayOrder: Number (default: 0)
-- filterMetadata: Object (UI display options)
+
+```javascript
+{
+  id: String,
+  name: String,
+  slug: String,
+  description: String,
+  parentId: String,
+  image: String,
+  isActive: Boolean,
+  displayOrder: Number,
+  filterMetadata: Object
+}
+```
 
 ### Type
-- name: String (required)
-- slug: String (required, unique)
-- description: String
-- isActive: Boolean (default: true)
-- displayOrder: Number (default: 0)
-- categoryIds: [ObjectId] (references Category)
-- filterMetadata: Object (UI display options)
+
+```javascript
+{
+  id: String,
+  name: String,
+  slug: String,
+  description: String,
+  isActive: Boolean,
+  displayOrder: Number,
+  categoryIds: [String],
+  filterMetadata: Object
+}
+```
 
 ### Brand
-- name: String (required)
-- slug: String (required, unique)
-- description: String
-- logo: String
-- website: String
-- isActive: Boolean (default: true)
-- countryId: ObjectId (references Country)
-- filterMetadata: Object (UI display options)
+
+```javascript
+{
+  id: String,
+  name: String,
+  slug: String,
+  description: String,
+  logo: String,
+  website: String,
+  isActive: Boolean,
+  countryId: String,
+  filterMetadata: Object
+}
+```
 
 ### Country
-- name: String (required)
-- code: String (required, unique)
-- flag: String
-- isActive: Boolean (default: true)
-- filterMetadata: Object (UI display options) 
+
+```javascript
+{
+  id: String,
+  name: String,
+  code: String,
+  flag: String,
+  isActive: Boolean,
+  filterMetadata: Object
+}
+```
+
+### User
+
+```javascript
+{
+  id: String,
+  firstName: String,
+  lastName: String,
+  email: String,
+  password: String,
+  role: String,
+  isActive: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+``` 
