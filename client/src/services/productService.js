@@ -1,85 +1,135 @@
-import apiClient from './api/index';
-import { ENDPOINTS } from './api/index';
+import axios from 'axios';
+import Product from '../models/Product';
+import { ENDPOINTS } from './api/endpoints';
+
+const API_BASE_URL = 'http://localhost:5000/api';
 
 /**
- * Get all products
- * @returns {Promise<Array>} Array of products
+ * Service for product-related operations
+ * This centralizes all the product data access in one place
  */
-export const getAllProducts = async () => {
-  return apiClient.get(ENDPOINTS.PRODUCTS);
-};
+class ProductService {
+  /**
+   * Retrieves all products from the backend API.
+   * @returns {Promise<Product[]>} Array of product instances
+   */
+  async getAllProducts() {
+    try {
+      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}`);
+      return response.data.map(product => Product.fromJSON(product));
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Fetches a specific product by its unique identifier.
+   * @param {string} id Product ID
+   * @returns {Promise<Product>} Product instance
+   * @throws {Error} When product is not found
+   */
+  async getProductById(id) {
+    try {
+      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCT_BY_ID(id)}`);
+      return Product.fromJSON(response.data);
+    } catch (error) {
+      console.error(`Error fetching product with ID ${id}:`, error);
+      throw new Error(`Product not found: ${error.message}`);
+    }
+  }
+  
+  /**
+   * Searches for products based on specified criteria.
+   * @param {Object} criteria Search parameters (name, category, price range, etc.)
+   * @returns {Promise<Product[]>} Array of matching product instances
+   */
+  async searchProducts(criteria = {}) {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      
+      if (criteria.query) {
+        params.append('query', criteria.query);
+      }
+      
+      if (criteria.category) {
+        params.append('category', criteria.category);
+      }
+      
+      if (criteria.brand) {
+        params.append('brand', criteria.brand);
+      }
+      
+      if (criteria.type) {
+        params.append('type', criteria.type);
+      }
+      
+      if (criteria.minPrice) {
+        params.append('minPrice', criteria.minPrice);
+      }
+      
+      if (criteria.maxPrice) {
+        params.append('maxPrice', criteria.maxPrice);
+      }
+      
+      if (criteria.inStock !== undefined) {
+        params.append('inStock', criteria.inStock);
+      }
+      
+      // Make API request with query parameters
+      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}?${params.toString()}`);
+      return response.data.map(product => Product.fromJSON(product));
+    } catch (error) {
+      console.error('Error searching products:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Creates a new product or updates an existing one.
+   * @param {Product} product Product instance to save
+   * @returns {Promise<Product>} Saved product instance with updated fields
+   */
+  async saveProduct(product) {
+    try {
+      let response;
+      
+      if (product.id) {
+        // Update existing product
+        response = await axios.put(
+          `${API_BASE_URL}${ENDPOINTS.PRODUCT_BY_ID(product.id)}`,
+          product.toJSON()
+        );
+      } else {
+        // Create new product
+        response = await axios.post(
+          `${API_BASE_URL}${ENDPOINTS.PRODUCTS}`,
+          product.toJSON()
+        );
+      }
+      
+      return Product.fromJSON(response.data);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Permanently removes a product from the system.
+   * @param {string} id Product ID to delete
+   * @returns {Promise<boolean>} True if deletion was successful
+   */
+  async deleteProduct(id) {
+    try {
+      await axios.delete(`${API_BASE_URL}${ENDPOINTS.PRODUCT_BY_ID(id)}`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting product with ID ${id}:`, error);
+      throw error;
+    }
+  }
+}
 
-/**
- * Get product by ID
- * @param {string} id - Product ID
- * @returns {Promise<Object>} Product object
- */
-export const getProductById = async (id) => {
-  return apiClient.get(ENDPOINTS.PRODUCT_BY_ID(id));
-};
-
-/**
- * Get products by category
- * @param {string} category - Category ID or slug
- * @returns {Promise<Array>} Array of products
- */
-export const getProductsByCategory = async (category) => {
-  return apiClient.get(ENDPOINTS.PRODUCTS_BY_CATEGORY(category));
-};
-
-/**
- * Get products by brand
- * @param {string} brand - Brand ID or slug
- * @returns {Promise<Array>} Array of products
- */
-export const getProductsByBrand = async (brand) => {
-  return apiClient.get(ENDPOINTS.PRODUCTS_BY_BRAND(brand));
-};
-
-/**
- * Get products by type
- * @param {string} type - Type ID or slug
- * @returns {Promise<Array>} Array of products
- */
-export const getProductsByType = async (type) => {
-  return apiClient.get(ENDPOINTS.PRODUCTS_BY_TYPE(type));
-};
-
-/**
- * Create a new product
- * @param {Object} productData - Product data
- * @returns {Promise<Object>} Created product
- */
-export const createProduct = async (productData) => {
-  return apiClient.post(ENDPOINTS.PRODUCTS, productData);
-};
-
-/**
- * Update a product
- * @param {string} id - Product ID
- * @param {Object} productData - Updated product data
- * @returns {Promise<Object>} Updated product
- */
-export const updateProduct = async (id, productData) => {
-  return apiClient.put(ENDPOINTS.PRODUCT_BY_ID(id), productData);
-};
-
-/**
- * Delete a product
- * @param {string} id - Product ID
- * @returns {Promise<Object>} Deletion result
- */
-export const deleteProduct = async (id) => {
-  return apiClient.delete(ENDPOINTS.PRODUCT_BY_ID(id));
-};
-
-export default {
-  getAllProducts,
-  getProductById,
-  getProductsByCategory,
-  getProductsByBrand,
-  getProductsByType,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-}; 
+export default new ProductService(); 

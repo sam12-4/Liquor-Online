@@ -8,7 +8,12 @@
  * @param {Object} relationships - Relationship maps
  * @returns {Array} - Available type IDs
  */
-export const getAvailableTypes = (currentFilters, allProducts, relationships) => {
+export const getAvailableTypes = (currentFilters, allProducts = [], relationships) => {
+  // Ensure allProducts is an array
+  if (!Array.isArray(allProducts)) {
+    return [];
+  }
+  
   const { 
     selectedCategories, 
     selectedBrands, 
@@ -21,7 +26,7 @@ export const getAvailableTypes = (currentFilters, allProducts, relationships) =>
   // Apply existing filters (except types)
   if (selectedCategories.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.categoryIds.some(catId => selectedCategories.includes(catId))
+      product.categoryIds && product.categoryIds.some(catId => selectedCategories.includes(catId))
     );
   }
   
@@ -55,7 +60,12 @@ export const getAvailableTypes = (currentFilters, allProducts, relationships) =>
  * @param {Object} relationships - Relationship maps
  * @returns {Array} - Available brand IDs
  */
-export const getAvailableBrands = (currentFilters, allProducts, relationships) => {
+export const getAvailableBrands = (currentFilters, allProducts = [], relationships) => {
+  // Ensure allProducts is an array
+  if (!Array.isArray(allProducts)) {
+    return [];
+  }
+  
   const { 
     selectedCategories, 
     selectedTypes, 
@@ -68,13 +78,13 @@ export const getAvailableBrands = (currentFilters, allProducts, relationships) =
   // Apply existing filters (except brands)
   if (selectedCategories.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.categoryIds.some(catId => selectedCategories.includes(catId))
+      product.categoryIds && product.categoryIds.some(catId => selectedCategories.includes(catId))
     );
   }
   
   if (selectedTypes.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.typeIds.some(typeId => selectedTypes.includes(typeId))
+      product.typeIds && product.typeIds.some(typeId => selectedTypes.includes(typeId))
     );
   }
   
@@ -102,7 +112,12 @@ export const getAvailableBrands = (currentFilters, allProducts, relationships) =
  * @param {Object} relationships - Relationship maps
  * @returns {Array} - Available country IDs
  */
-export const getAvailableCountries = (currentFilters, allProducts, relationships) => {
+export const getAvailableCountries = (currentFilters, allProducts = [], relationships) => {
+  // Ensure allProducts is an array
+  if (!Array.isArray(allProducts)) {
+    return [];
+  }
+  
   const { 
     selectedCategories, 
     selectedTypes, 
@@ -115,13 +130,13 @@ export const getAvailableCountries = (currentFilters, allProducts, relationships
   // Apply existing filters (except countries)
   if (selectedCategories.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.categoryIds.some(catId => selectedCategories.includes(catId))
+      product.categoryIds && product.categoryIds.some(catId => selectedCategories.includes(catId))
     );
   }
   
   if (selectedTypes.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.typeIds.some(typeId => selectedTypes.includes(typeId))
+      product.typeIds && product.typeIds.some(typeId => selectedTypes.includes(typeId))
     );
   }
   
@@ -143,13 +158,18 @@ export const getAvailableCountries = (currentFilters, allProducts, relationships
 };
 
 /**
- * Get available categories based on current filter selections
+ * Get available categories based on current filters
  * @param {Object} currentFilters - Current filter state
- * @param {Array} allProducts - All products in the system
- * @param {Object} relationships - Relationship maps
+ * @param {Array} allProducts - All products
+ * @param {Object} relationships - Optional relationships data
  * @returns {Array} - Available category IDs
  */
-export const getAvailableCategories = (currentFilters, allProducts, relationships) => {
+export const getAvailableCategories = (currentFilters, allProducts = [], relationships) => {
+  // Ensure allProducts is an array
+  if (!Array.isArray(allProducts)) {
+    return [];
+  }
+  
   const { 
     selectedTypes, 
     selectedBrands, 
@@ -162,7 +182,7 @@ export const getAvailableCategories = (currentFilters, allProducts, relationship
   // Apply existing filters (except categories)
   if (selectedTypes.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.typeIds.some(typeId => selectedTypes.includes(typeId))
+      product.typeIds && product.typeIds.some(typeId => selectedTypes.includes(typeId))
     );
   }
   
@@ -190,12 +210,17 @@ export const getAvailableCategories = (currentFilters, allProducts, relationship
 };
 
 /**
- * Filter products based on current filter selections
+ * Filter products based on current filter state
  * @param {Object} currentFilters - Current filter state
- * @param {Array} allProducts - All products in the system
+ * @param {Array} allProducts - All products
  * @returns {Array} - Filtered products
  */
-export const filterProducts = (currentFilters, allProducts) => {
+export const filterProducts = (currentFilters, allProducts = []) => {
+  // Ensure allProducts is an array
+  if (!Array.isArray(allProducts)) {
+    return [];
+  }
+  
   const { 
     selectedCategories, 
     selectedTypes, 
@@ -208,35 +233,35 @@ export const filterProducts = (currentFilters, allProducts) => {
   // Start with all products
   let filteredProducts = [...allProducts];
   
-  // Apply category filter
+  // Filter by categories
   if (selectedCategories.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.categoryIds.some(catId => selectedCategories.includes(catId))
+      product.categoryIds && product.categoryIds.some(catId => selectedCategories.includes(catId))
     );
   }
   
-  // Apply type filter
+  // Filter by types
   if (selectedTypes.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
-      product.typeIds.some(typeId => selectedTypes.includes(typeId))
+      product.typeIds && product.typeIds.some(typeId => selectedTypes.includes(typeId))
     );
   }
   
-  // Apply brand filter
+  // Filter by brands
   if (selectedBrands.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
       selectedBrands.includes(product.brandId)
     );
   }
   
-  // Apply country filter
+  // Filter by countries
   if (selectedCountries.length > 0) {
     filteredProducts = filteredProducts.filter(product => 
       selectedCountries.includes(product.countryId)
     );
   }
   
-  // Apply price range filter
+  // Filter by price range
   if (priceRange.min !== null || priceRange.max !== null) {
     filteredProducts = filteredProducts.filter(product => {
       if (priceRange.min !== null && product.price < priceRange.min) {
@@ -249,7 +274,7 @@ export const filterProducts = (currentFilters, allProducts) => {
     });
   }
   
-  // Apply search query
+  // Filter by search query
   if (searchQuery && searchQuery.trim() !== '') {
     const query = searchQuery.toLowerCase().trim();
     filteredProducts = filteredProducts.filter(product => 
@@ -367,12 +392,25 @@ export const resetFilters = () => {
 };
 
 /**
- * Get filter counts for each filter option
- * @param {Array} allProducts - All products in the system
+ * Calculate filter counts for UI display
+ * @param {Array} allProducts - All products
  * @param {Object} allEntities - All entities (categories, types, brands, countries)
- * @returns {Object} - Counts for each filter option
+ * @returns {Object} - Filter counts
  */
-export const getFilterCounts = (allProducts, allEntities) => {
+export const getFilterCounts = (allProducts = [], allEntities = {}) => {
+  // Ensure allProducts is an array
+  if (!Array.isArray(allProducts)) {
+    return {
+      categories: {},
+      types: {},
+      brands: {},
+      countries: {}
+    };
+  }
+  
+  const { categories = [], types = [], brands = [], countries = [] } = allEntities;
+  
+  // Initialize counts
   const counts = {
     categories: {},
     types: {},
@@ -380,22 +418,54 @@ export const getFilterCounts = (allProducts, allEntities) => {
     countries: {}
   };
   
-  // Count products for each category
+  // Count categories
+  categories.forEach(category => {
+    counts.categories[category._id || category.id] = 0;
+  });
+  
+  // Count types
+  types.forEach(type => {
+    counts.types[type._id || type.id] = 0;
+  });
+  
+  // Count brands
+  brands.forEach(brand => {
+    counts.brands[brand._id || brand.id] = 0;
+  });
+  
+  // Count countries
+  countries.forEach(country => {
+    counts.countries[country._id || country.id] = 0;
+  });
+  
+  // Count products for each filter
   allProducts.forEach(product => {
-    product.categoryIds.forEach(catId => {
-      counts.categories[catId] = (counts.categories[catId] || 0) + 1;
-    });
-    
-    product.typeIds.forEach(typeId => {
-      counts.types[typeId] = (counts.types[typeId] || 0) + 1;
-    });
-    
-    if (product.brandId) {
-      counts.brands[product.brandId] = (counts.brands[product.brandId] || 0) + 1;
+    // Count categories
+    if (product.categoryIds && Array.isArray(product.categoryIds)) {
+      product.categoryIds.forEach(catId => {
+        if (counts.categories[catId]) {
+          counts.categories[catId]++;
+        }
+      });
     }
     
-    if (product.countryId) {
-      counts.countries[product.countryId] = (counts.countries[product.countryId] || 0) + 1;
+    // Count types
+    if (product.typeIds && Array.isArray(product.typeIds)) {
+      product.typeIds.forEach(typeId => {
+        if (counts.types[typeId]) {
+          counts.types[typeId]++;
+        }
+      });
+    }
+    
+    // Count brands
+    if (product.brandId && counts.brands[product.brandId]) {
+      counts.brands[product.brandId]++;
+    }
+    
+    // Count countries
+    if (product.countryId && counts.countries[product.countryId]) {
+      counts.countries[product.countryId]++;
     }
   });
   

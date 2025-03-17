@@ -1,10 +1,38 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../actions/authActions';
+import { isAdminLoggedIn, isUserLoggedIn, getAdminUser, getUser, adminLogout, userLogout } from '../../utils/auth';
+import { useCart } from '../../contexts/CartContext';
 
 const Header = () => {
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [cartCount, setCartCount] = useState(0)
-  const navigate = useNavigate()
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { cart, itemCount } = useCart();
+  
+  // State for authentication
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userData, setUserData] = useState(null);
+  
+  // Check authentication status on mount and when dependencies change
+  useEffect(() => {
+    const adminAuth = isAdminLoggedIn();
+    const userAuth = isUserLoggedIn();
+    
+    setIsAuthenticated(adminAuth || userAuth);
+    setIsAdmin(adminAuth);
+    
+    if (adminAuth) {
+      setUserData(getAdminUser());
+    } else if (userAuth) {
+      setUserData(getUser());
+    } else {
+      setUserData(null);
+    }
+  }, []);
 
   // Handle category navigation
   const handleCategoryClick = (categoryPath, subcat = null) => {
@@ -23,6 +51,26 @@ const Header = () => {
     const path = `/brand/${formattedBrand}`;
     console.log('Header - Navigating to brand:', path);
     navigate(path);
+  };
+
+  const onLogout = () => {
+    // Clear auth state based on user type
+    if (isAdmin) {
+      adminLogout();
+    } else {
+      userLogout();
+    }
+    
+    // Dispatch Redux logout action (for backward compatibility)
+    dispatch(logout());
+    
+    // Update local state
+    setIsAuthenticated(false);
+    setIsAdmin(false);
+    setUserData(null);
+    
+    // Navigate to home page
+    navigate('/');
   };
 
   return (
@@ -282,9 +330,28 @@ const Header = () => {
 
           {/* Right Side - Login & Cart */}
           <div className="flex items-center space-x-4">
-            <Link to="/login" className="text-neutral-dark font-medium hover:text-primary">
-              LOGIN / REGISTER
-            </Link>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                {isAdmin && (
+                  <Link to="/admin" className="text-neutral-dark font-medium hover:text-primary">
+                    ADMIN
+                  </Link>
+                )}
+                <Link to="/account" className="text-neutral-dark font-medium hover:text-primary">
+                  {userData && userData.name ? userData.name.toUpperCase() : 'ACCOUNT'}
+                </Link>
+                <button 
+                  onClick={onLogout}
+                  className="text-neutral-dark font-medium hover:text-primary"
+                >
+                  LOGOUT
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" className="text-neutral-dark font-medium hover:text-primary">
+                LOGIN / REGISTER
+              </Link>
+            )}
 
             {/* Search button */}
             <button className="p-2 text-neutral-dark hover:text-primary">
@@ -305,9 +372,9 @@ const Header = () => {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
               </svg>
-              {cartCount > 0 && (
+              {itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {cartCount}
+                  {itemCount}
                 </span>
               )}
             </Link>
@@ -360,12 +427,32 @@ const Header = () => {
               <li>
                 <Link to="/product-tag/limited-editions" className="block py-2 nav-link">SPECIAL PRODUCTS</Link>
               </li>
+              {isAuthenticated && (
+                <>
+                  <li>
+                    <Link to="/account" className="block py-2 nav-link">ACCOUNT</Link>
+                  </li>
+                  {isAdmin && (
+                    <li>
+                      <Link to="/admin" className="block py-2 nav-link">ADMIN</Link>
+                    </li>
+                  )}
+                  <li>
+                    <button 
+                      onClick={onLogout}
+                      className="block py-2 nav-link w-full text-left"
+                    >
+                      LOGOUT
+                    </button>
+                  </li>
+                </>
+              )}
             </ul>
           </nav>
         </div>
       )}
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

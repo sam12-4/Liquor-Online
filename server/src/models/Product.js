@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 const productSchema = new mongoose.Schema({
   name: {
@@ -6,30 +7,60 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
   description: {
     type: String,
     required: true
+  },
+  shortDescription: {
+    type: String,
+    default: ''
   },
   price: {
     type: Number,
     required: true,
     min: 0
   },
-  images: [{
-    type: String
-  }],
-  stock: {
+  salePrice: {
     type: Number,
-    required: true,
-    default: 0,
-    min: 0
+    min: 0,
+    default: 0
+  },
+  onSale: {
+    type: Boolean,
+    default: false
   },
   sku: {
     type: String,
     required: true,
-    unique: true,
-    trim: true
+    unique: true
   },
+  stock: {
+    type: Number,
+    default: 0
+  },
+  images: [
+    {
+      url: {
+        type: String,
+        required: true
+      },
+      alt: {
+        type: String,
+        default: ''
+      },
+      isPrimary: {
+        type: Boolean,
+        default: false
+      }
+    }
+  ],
   isActive: {
     type: Boolean,
     default: true
@@ -38,6 +69,45 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isFeatured: {
+    type: Boolean,
+    default: false
+  },
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  ratingCount: {
+    type: Number,
+    default: 0
+  },
+  reviewCount: {
+    type: Number,
+    default: 0
+  },
+  attributes: {
+    type: Map,
+    of: String
+  },
+  brandId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Brand'
+  },
+  categoryIds: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true
+  }],
+  typeIds: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Type'
+  }],
+  countryId: {
+    type: String,
+    default: ''
+  },
   dateAdded: {
     type: Date,
     default: Date.now
@@ -45,45 +115,25 @@ const productSchema = new mongoose.Schema({
   dateModified: {
     type: Date,
     default: Date.now
-  },
-  
-  // Relationships
-  categoryIds: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: true
-  }],
-  brandId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Brand'
-  },
-  typeIds: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Type'
-  }],
-  countryId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Country'
-  },
-  
-  // Additional attributes
-  attributes: {
-    type: Map,
-    of: mongoose.Schema.Types.Mixed
   }
 }, {
   timestamps: true
 });
 
 // Add indexes for better query performance
-productSchema.index({ name: 1 });
-productSchema.index({ sku: 1 }, { unique: true });
-productSchema.index({ categoryIds: 1 });
+productSchema.index({ name: 'text', description: 'text' });
+productSchema.index({ slug: 1 });
+productSchema.index({ sku: 1 });
 productSchema.index({ brandId: 1 });
+productSchema.index({ categoryIds: 1 });
 productSchema.index({ typeIds: 1 });
-productSchema.index({ countryId: 1 });
-productSchema.index({ price: 1 });
 productSchema.index({ isActive: 1 });
+productSchema.index({ isFeatured: 1 });
 productSchema.index({ isHot: 1 });
+productSchema.index({ price: 1 });
+
+// Debug the schema
+console.log('Product schema defined with fields:', Object.keys(productSchema.paths));
+console.log('Images field type:', productSchema.path('images'));
 
 module.exports = mongoose.model('Product', productSchema); 

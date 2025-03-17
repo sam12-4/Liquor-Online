@@ -14,7 +14,8 @@ const Header = () => {
       path += `?za=${subcat}`;
     }
     console.log('Header - Navigating to:', path);
-    navigate(path);
+    // Use navigate with { replace: false } to ensure it adds to history stack
+    navigate(path, { replace: false });
   };
 
   // Handle brand navigation
@@ -22,7 +23,8 @@ const Header = () => {
     const formattedBrand = brandName.toLowerCase().replace(/\s+/g, '-');
     const path = `/brand/${formattedBrand}`;
     console.log('Header - Navigating to brand:', path);
-    navigate(path);
+    // Use navigate with { replace: false } to ensure it adds to history stack
+    navigate(path, { replace: false });
   };
 
   return (

@@ -1,55 +1,117 @@
 import React, { useState, useEffect } from 'react';
 import ProductFilters from '../../components/admin/ProductFilters';
 import { filterProducts, resetFilters, getFilterCounts } from '../../data/filterLogic';
+import productService from '../../services/productService';
+import categoryService from '../../services/categoryService';
+import typeService from '../../services/typeService';
+import brandService from '../../services/brandService';
+import countryService from '../../services/countryService';
 
-// Sample data - in a real app, this would come from an API
-import sampleProducts from '../../data/sampleProducts';
-import sampleCategories from '../../data/sampleCategories';
-import sampleTypes from '../../data/sampleTypes';
-import sampleBrands from '../../data/sampleBrands';
-import sampleCountries from '../../data/sampleCountries';
-
+/**
+ * ProductsManagement component provides a comprehensive interface for managing
+ * the product catalog. Features include filtering, sorting, pagination, and bulk actions.
+ * Integrates with backend services for real-time data management.
+ */
 const ProductsManagement = () => {
-  // State for filters
+  // Filter state management
   const [currentFilters, setCurrentFilters] = useState(resetFilters());
   
-  // State for filtered products
+  // Product and taxonomy data
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [types, setTypes] = useState([]);
+  const [countries, setCountries] = useState([]);
+  
+  // Filtered product view
   const [filteredProducts, setFilteredProducts] = useState([]);
   
-  // State for filter counts
+  // Filter counts for UI display
   const [filterCounts, setFilterCounts] = useState(null);
   
-  // State for loading
+  // UI state management
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // State for selected products (for bulk actions)
+  // Selection for bulk operations
   const [selectedProducts, setSelectedProducts] = useState([]);
   
-  // State for sorting
+  // Sorting configuration
   const [sortConfig, setSortConfig] = useState({
     key: 'name',
     direction: 'asc'
   });
   
-  // Calculate filter counts on initial load
+  // Pagination controls
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // Fetch data from the backend
   useEffect(() => {
-    const counts = getFilterCounts(sampleProducts, {
-      categories: sampleCategories,
-      types: sampleTypes,
-      brands: sampleBrands,
-      countries: sampleCountries
-    });
-    setFilterCounts(counts);
-    setIsLoading(false);
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch products and taxonomies using our service files
+        const [productsData, categoriesData, brandsData, typesData, countriesData] = await Promise.all([
+          productService.getAllProducts(),
+          categoryService.getAllCategories(),
+          brandService.getAllBrands(),
+          typeService.getAllTypes(),
+          countryService.getAllCountries()
+        ]);
+        
+        // Set data
+        setProducts(productsData);
+        setCategories(categoriesData);
+        setBrands(brandsData);
+        setTypes(typesData);
+        setCountries(countriesData);
+        
+        // Apply initial filtering
+        const filtered = filterProducts(productsData, currentFilters);
+        setFilteredProducts(filtered);
+        
+        // Calculate filter counts
+        const counts = getFilterCounts(productsData);
+        setFilterCounts(counts);
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load products data. Please try again.');
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
   }, []);
   
-  // Update filtered products when filters change
+  // Update filtered products when filters change or products are loaded
   useEffect(() => {
+    console.log('Products state changed:', products);
+    
+    if (products.length === 0) {
+      console.log('No products available to filter');
+      return;
+    }
+    
     setIsLoading(true);
     
-    // Simulate API delay
+    // Simulate API delay for better UX
     const timeoutId = setTimeout(() => {
-      const filtered = filterProducts(currentFilters, sampleProducts);
+      const filtered = filterProducts(currentFilters, products);
+      console.log('Filtered products:', filtered);
+      
+      // Check for image issues in filtered products
+      if (filtered.length > 0) {
+        const productsWithoutImages = filtered.filter(p => !p.images || !Array.isArray(p.images) || p.images.length === 0);
+        if (productsWithoutImages.length > 0) {
+          console.warn(`${productsWithoutImages.length} products without images:`, 
+            productsWithoutImages.map(p => p.name));
+        }
+      }
       
       // Apply sorting
       const sortedProducts = [...filtered].sort((a, b) => {
@@ -62,12 +124,15 @@ const ProductsManagement = () => {
         return 0;
       });
       
+      console.log('Sorted products:', sortedProducts);
       setFilteredProducts(sortedProducts);
       setIsLoading(false);
+      // Reset to first page when filters or sorting changes
+      setCurrentPage(1);
     }, 300);
     
     return () => clearTimeout(timeoutId);
-  }, [currentFilters, sortConfig]);
+  }, [currentFilters, sortConfig, products]);
   
   // Handle filter changes
   const handleFiltersChange = (newFilters) => {
@@ -95,29 +160,86 @@ const ProductsManagement = () => {
   
   // Handle select all products
   const handleSelectAll = () => {
-    if (selectedProducts.length === filteredProducts.length) {
+    if (selectedProducts.length === paginatedProducts.length) {
       setSelectedProducts([]);
     } else {
-      setSelectedProducts(filteredProducts.map(product => product.id));
+      setSelectedProducts(paginatedProducts.map(product => product._id));
     }
   };
   
   // Handle bulk delete
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedProducts.length === 0) return;
     
-    // In a real app, this would call an API to delete the products
-    alert(`Deleting ${selectedProducts.length} products`);
-    
-    // For demo purposes, just remove them from the filtered list
-    setFilteredProducts(prev => prev.filter(product => !selectedProducts.includes(product.id)));
-    setSelectedProducts([]);
+    if (window.confirm(`Are you sure you want to delete ${selectedProducts.length} products?`)) {
+      setIsLoading(true);
+      
+      try {
+        // In a real app, this would call an API to delete the products
+        // await axios.post(`${API_URL}/products/bulk-delete`, { ids: selectedProducts });
+        
+        // For now, just remove them from the local state
+        setProducts(prev => prev.filter(product => !selectedProducts.includes(product._id)));
+        setSelectedProducts([]);
+        alert(`${selectedProducts.length} products deleted successfully`);
+      } catch (error) {
+        console.error('Error deleting products:', error);
+        alert('Failed to delete products. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
   
   // Handle add new product
   const handleAddProduct = () => {
-    // In a real app, this would navigate to a product creation form
-    alert('Navigate to add product form');
+    // Navigate to product creation form
+    window.location.href = '/admin/products/create';
+  };
+  
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+  
+  // Calculate pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  
+  // Find related entities helper function
+  const findRelatedEntities = (product) => {
+    const productCategories = product.categoryIds
+      ? product.categoryIds.map(catId => 
+          categories.find(c => c._id === catId || c.id === catId)
+        ).filter(Boolean)
+      : [];
+    
+    const productBrand = brands.find(b => b._id === product.brandId || b.id === product.brandId);
+    
+    return { productCategories, productBrand };
+  };
+  
+  // Add this function at the component level, before the return statement
+  const getDefaultProductImage = (product) => {
+    // Check if product has categories
+    const category = product.categoryIds && product.categoryIds.length > 0 
+      ? product.categoryIds[0].slug 
+      : '';
+    
+    // Default image mapping based on category
+    const categoryImages = {
+      'vodka': 'https://images.unsplash.com/photo-1613063020776-2eccbc3d0f9b?q=80&w=300',
+      'whisky': 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?q=80&w=300',
+      'gin': 'https://images.unsplash.com/photo-1514218953589-2d7d87cf337e?q=80&w=300',
+      'rum': 'https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?q=80&w=300',
+      'tequila': 'https://images.unsplash.com/photo-1516535794938-6063878f08cc?q=80&w=300',
+      'liqueur': 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=300'
+    };
+    
+    // Return category-specific image or a generic alcohol image
+    return categoryImages[category] || 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?q=80&w=300';
   };
   
   return (
@@ -134,15 +256,21 @@ const ProductsManagement = () => {
         </div>
       </div>
       
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          <p>{error}</p>
+        </div>
+      )}
+      
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Filters Sidebar */}
         <div className="w-full lg:w-1/4">
           <ProductFilters 
-            allProducts={sampleProducts}
-            allCategories={sampleCategories}
-            allTypes={sampleTypes}
-            allBrands={sampleBrands}
-            allCountries={sampleCountries}
+            allProducts={products}
+            allCategories={categories}
+            allTypes={types}
+            allBrands={brands}
+            allCountries={countries}
             currentFilters={currentFilters}
             onFiltersChange={handleFiltersChange}
             filterCounts={filterCounts}
@@ -192,8 +320,8 @@ const ProductsManagement = () => {
                   <option value="name-desc">Name (Z-A)</option>
                   <option value="price-asc">Price (Low to High)</option>
                   <option value="price-desc">Price (High to Low)</option>
-                  <option value="dateAdded-desc">Newest First</option>
-                  <option value="dateAdded-asc">Oldest First</option>
+                  <option value="createdAt-desc">Newest First</option>
+                  <option value="createdAt-asc">Oldest First</option>
                 </select>
               </div>
             </div>
@@ -206,7 +334,7 @@ const ProductsManagement = () => {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <input 
                         type="checkbox" 
-                        checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                        checked={selectedProducts.length === paginatedProducts.length && paginatedProducts.length > 0}
                         onChange={handleSelectAll}
                         className="mr-2"
                       />
@@ -264,32 +392,66 @@ const ProductsManagement = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredProducts.map(product => {
+                    paginatedProducts.map(product => {
                       // Find related entities
-                      const productCategories = product.categoryIds.map(catId => 
-                        sampleCategories.find(c => c.id === catId)
-                      ).filter(Boolean);
+                      const { productCategories, productBrand } = findRelatedEntities(product);
                       
-                      const productBrand = sampleBrands.find(b => b.id === product.brandId);
+                      // Get default image based on product category
+                      const defaultImage = getDefaultProductImage(product);
+                      
+                      // Get product image with better fallback handling
+                      let productImage = null;
+                      let productImageAlt = product.name;
+                      
+                      // Check if product has images array with the expected structure
+                      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                        // Try to find primary image or use first image
+                        const imageObj = product.images.find(img => img.isPrimary) || product.images[0];
+                        
+                        // Check if the image object has a url property (as per your database schema)
+                        if (imageObj && imageObj.url) {
+                          productImage = imageObj.url;
+                          if (imageObj.alt) {
+                            productImageAlt = imageObj.alt;
+                          }
+                        } 
+                        // If it's just a string
+                        else if (typeof imageObj === 'string') {
+                          productImage = imageObj;
+                        }
+                        // If it's some other object structure
+                        else if (imageObj) {
+                          productImage = imageObj.url || imageObj.src || imageObj.path || null;
+                        }
+                      }
+                      
+                      // For debugging
+                      if (!productImage) {
+                        console.log(`No image found for product ${product.name}. Using default.`);
+                      }
                       
                       return (
-                        <tr key={product.id} className="hover:bg-gray-50">
+                        <tr key={product._id} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap">
                             <input 
                               type="checkbox" 
-                              checked={selectedProducts.includes(product.id)}
-                              onChange={() => handleProductSelect(product.id)}
+                              checked={selectedProducts.includes(product._id)}
+                              onChange={() => handleProductSelect(product._id)}
                             />
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              {product.images && product.images[0] && (
-                                <img 
-                                  src={product.images[0]} 
-                                  alt={product.name} 
-                                  className="h-10 w-10 object-cover mr-3"
-                                />
-                              )}
+                              {/* Display product image with category-based fallback */}
+                              <img 
+                                src={productImage || defaultImage}
+                                alt={productImageAlt} 
+                                className="h-12 w-12 object-cover mr-3 rounded"
+                                onError={(e) => {
+                                  console.log(`Image load error for ${product.name}, using default`);
+                                  e.target.onerror = null;
+                                  e.target.src = defaultImage;
+                                }}
+                              />
                               <div>
                                 <div className="font-medium text-gray-900">{product.name}</div>
                                 <div className="text-xs text-gray-500">SKU: {product.sku}</div>
@@ -298,12 +460,17 @@ const ProductsManagement = () => {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             ${product.price.toFixed(2)}
+                            {product.salePrice > 0 && (
+                              <div className="text-xs text-red-600">
+                                Sale: ${product.salePrice.toFixed(2)}
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex flex-wrap gap-1">
                               {productCategories.map(category => (
                                 <span 
-                                  key={category.id} 
+                                  key={category._id || category.id} 
                                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
                                 >
                                   {category.name}
@@ -325,8 +492,23 @@ const ProductsManagement = () => {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex space-x-2">
-                              <button className="text-blue-600 hover:text-blue-900">Edit</button>
-                              <button className="text-red-600 hover:text-red-900">Delete</button>
+                              <a 
+                                href={`/admin/products/${product._id}`}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                Edit
+                              </a>
+                              <button 
+                                onClick={() => {
+                                  if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
+                                    handleProductSelect(product._id);
+                                    handleBulkDelete();
+                                  }
+                                }}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -341,35 +523,96 @@ const ProductsManagement = () => {
             {filteredProducts.length > 0 && (
               <div className="flex justify-between items-center mt-4 px-4 py-3 bg-gray-50 border-t border-gray-200 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
-                  <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  <button 
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                      currentPage === 1 ? 'text-gray-400 bg-gray-100' : 'text-gray-700 bg-white hover:bg-gray-50'
+                    }`}
+                  >
                     Previous
                   </button>
-                  <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  <button 
+                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                      currentPage === totalPages ? 'text-gray-400 bg-gray-100' : 'text-gray-700 bg-white hover:bg-gray-50'
+                    }`}
+                  >
                     Next
                   </button>
                 </div>
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-gray-700">
-                      Showing <span className="font-medium">1</span> to <span className="font-medium">10</span> of{' '}
+                      Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
+                      <span className="font-medium">
+                        {Math.min(indexOfLastItem, filteredProducts.length)}
+                      </span> of{' '}
                       <span className="font-medium">{filteredProducts.length}</span> results
                     </p>
                   </div>
                   <div>
                     <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                      <button 
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 ${
+                          currentPage === 1 ? 'text-gray-400 bg-gray-100' : 'bg-white text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
                         Previous
                       </button>
-                      <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        1
-                      </button>
-                      <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        2
-                      </button>
-                      <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        3
-                      </button>
-                      <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                      
+                      {/* Page numbers */}
+                      {[...Array(totalPages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        // Show first page, last page, and pages around current page
+                        if (
+                          pageNumber === 1 ||
+                          pageNumber === totalPages ||
+                          (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() => handlePageChange(pageNumber)}
+                              className={`relative inline-flex items-center px-4 py-2 border ${
+                                currentPage === pageNumber
+                                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        }
+                        
+                        // Show ellipsis for skipped pages
+                        if (
+                          (pageNumber === 2 && currentPage > 3) ||
+                          (pageNumber === totalPages - 1 && currentPage < totalPages - 2)
+                        ) {
+                          return (
+                            <span
+                              key={pageNumber}
+                              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700"
+                            >
+                              ...
+                            </span>
+                          );
+                        }
+                        
+                        return null;
+                      })}
+                      
+                      <button 
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 ${
+                          currentPage === totalPages ? 'text-gray-400 bg-gray-100' : 'bg-white text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
                         Next
                       </button>
                     </nav>

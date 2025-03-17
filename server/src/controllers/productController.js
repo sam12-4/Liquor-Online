@@ -1,7 +1,41 @@
+// Import models from the src/models directory
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Type = require('../models/Type');
 const Brand = require('../models/Brand');
+
+// Add this line to debug the Product model
+console.log('Product model loaded:', !!Product, 'Schema paths:', Product.schema ? Object.keys(Product.schema.paths) : 'No schema');
+
+// Helper function to add default images based on category
+const addDefaultImages = (product) => {
+  if (!product.images || !Array.isArray(product.images) || product.images.length === 0) {
+    const categorySlug = product.categoryIds && product.categoryIds.length > 0 
+      ? (product.categoryIds[0].slug || '').toLowerCase() 
+      : '';
+    
+    // Default image mapping based on category
+    const categoryImages = {
+      'vodka': 'https://images.unsplash.com/photo-1613063020776-2eccbc3d0f9b?q=80&w=300',
+      'whisky': 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?q=80&w=300',
+      'gin': 'https://images.unsplash.com/photo-1514218953589-2d7d87cf337e?q=80&w=300',
+      'rum': 'https://images.unsplash.com/photo-1607622750671-6cd9a99eabd1?q=80&w=300',
+      'tequila': 'https://images.unsplash.com/photo-1516535794938-6063878f08cc?q=80&w=300',
+      'liqueur': 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=300'
+    };
+    
+    // Return category-specific image or a generic alcohol image
+    const defaultImageUrl = categoryImages[categorySlug] || 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?q=80&w=300';
+    
+    // Add a default image
+    product.images = [{
+      url: defaultImageUrl,
+      alt: product.name,
+      isPrimary: true
+    }];
+  }
+  return product;
+};
 
 // Get all products with filtering
 exports.getProducts = async (req, res) => {
@@ -70,6 +104,9 @@ exports.getProducts = async (req, res) => {
     const sortObj = {};
     sortObj[sort] = order === 'asc' ? 1 : -1;
     
+    // Debug: Log the Product model schema
+    console.log('Product schema:', Object.keys(Product.schema.paths));
+    
     // Execute query with pagination and sorting
     const products = await Product.find(filter)
       .sort(sortObj)
@@ -78,21 +115,33 @@ exports.getProducts = async (req, res) => {
       .populate('categoryIds', 'name slug')
       .populate('brandId', 'name slug')
       .populate('typeIds', 'name slug')
-      .populate('countryId', 'name code');
+      .populate('countryId', 'name code')
+      .select('name slug description shortDescription price salePrice onSale sku stock isActive isHot isFeatured rating ratingCount reviewCount attributes brandId categoryIds typeIds countryId images createdAt updatedAt dateAdded dateModified');
+    
+    // Convert products to plain objects to ensure all fields are included
+    const productsWithImages = products.map(product => {
+      const productObj = product.toObject ? product.toObject() : product;
+      // Add default images if missing
+      const enhancedProduct = addDefaultImages(productObj);
+      console.log(`Product ${enhancedProduct.name} images:`, enhancedProduct.images);
+      return enhancedProduct;
+    });
     
     // Get total count for pagination
     const total = await Product.countDocuments(filter);
     
+    console.log('Sample product images:', productsWithImages[0]?.images);
+    
     res.status(200).json({
       success: true,
-      count: products.length,
+      count: productsWithImages.length,
       total,
       pagination: {
         page: Number(page),
         limit: Number(limit),
         totalPages: Math.ceil(total / Number(limit))
       },
-      data: products
+      data: productsWithImages
     });
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -111,7 +160,8 @@ exports.getProductById = async (req, res) => {
       .populate('categoryIds', 'name slug')
       .populate('brandId', 'name slug')
       .populate('typeIds', 'name slug')
-      .populate('countryId', 'name code');
+      .populate('countryId', 'name code')
+      .select('name slug description shortDescription price salePrice onSale sku stock isActive isHot isFeatured rating ratingCount reviewCount attributes brandId categoryIds typeIds countryId images createdAt updatedAt dateAdded dateModified');
     
     if (!product) {
       return res.status(404).json({
@@ -120,9 +170,13 @@ exports.getProductById = async (req, res) => {
       });
     }
     
+    // Convert to plain object and add default images if needed
+    const productObj = product.toObject ? product.toObject() : product;
+    const enhancedProduct = addDefaultImages(productObj);
+    
     res.status(200).json({
       success: true,
-      data: product
+      data: enhancedProduct
     });
   } catch (error) {
     console.error('Error fetching product:', error);

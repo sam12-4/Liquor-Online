@@ -5,6 +5,9 @@
  * @returns {string} Formatted price with currency symbol
  */
 export const formatPrice = (price, currencySymbol = '$') => {
+  if (price === undefined || price === null) {
+    return `${currencySymbol}0.00`;
+  }
   return `${currencySymbol}${price.toFixed(2)}`;
 };
 

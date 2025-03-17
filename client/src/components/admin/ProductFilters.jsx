@@ -11,11 +11,11 @@ import {
 } from '../../data/filterLogic';
 
 const ProductFilters = ({ 
-  allProducts, 
-  allCategories, 
-  allTypes, 
-  allBrands, 
-  allCountries, 
+  allProducts = [], 
+  allCategories = [], 
+  allTypes = [], 
+  allBrands = [], 
+  allCountries = [], 
   currentFilters, 
   onFiltersChange,
   filterCounts
@@ -45,11 +45,14 @@ const ProductFilters = ({
   
   // Update available options when filters change
   useEffect(() => {
+    // Ensure allProducts is an array
+    const products = Array.isArray(allProducts) ? allProducts : [];
+    
     // Get available options based on current filters
-    const availableCategories = getAvailableCategories(currentFilters, allProducts);
-    const availableTypes = getAvailableTypes(currentFilters, allProducts);
-    const availableBrands = getAvailableBrands(currentFilters, allProducts);
-    const availableCountries = getAvailableCountries(currentFilters, allProducts);
+    const availableCategories = getAvailableCategories(currentFilters, products);
+    const availableTypes = getAvailableTypes(currentFilters, products);
+    const availableBrands = getAvailableBrands(currentFilters, products);
+    const availableCountries = getAvailableCountries(currentFilters, products);
     
     setAvailableOptions({
       categories: availableCategories,
@@ -136,25 +139,26 @@ const ProductFilters = ({
         {isExpanded.categories && (
           <div className="mt-2 max-h-60 overflow-y-auto">
             {allCategories.map(category => {
-              const isAvailable = availableOptions.categories.includes(category.id);
-              const isSelected = currentFilters.selectedCategories.includes(category.id);
-              const count = filterCounts?.categories[category.id] || 0;
+              const categoryId = category._id || category.id;
+              const isAvailable = availableOptions.categories.includes(categoryId);
+              const isSelected = currentFilters.selectedCategories.includes(categoryId);
+              const count = filterCounts?.categories[categoryId] || 0;
               
               return (
                 <div 
-                  key={category.id} 
+                  key={categoryId} 
                   className={`flex items-center py-1 ${!isAvailable && !isSelected ? 'opacity-50' : ''}`}
                 >
                   <input
                     type="checkbox"
-                    id={`category-${category.id}`}
+                    id={`category-${categoryId}`}
                     checked={isSelected}
-                    onChange={(e) => handleFilterToggle('category', category.id, e.target.checked)}
+                    onChange={(e) => handleFilterToggle('category', categoryId, e.target.checked)}
                     disabled={!isAvailable && !isSelected}
                     className="mr-2"
                   />
                   <label 
-                    htmlFor={`category-${category.id}`}
+                    htmlFor={`category-${categoryId}`}
                     className="flex-1 cursor-pointer text-sm"
                   >
                     {category.name}
@@ -181,22 +185,26 @@ const ProductFilters = ({
           {isExpanded.types && (
             <div className="mt-2 max-h-60 overflow-y-auto">
               {allTypes
-                .filter(type => availableOptions.types.includes(type.id) || currentFilters.selectedTypes.includes(type.id))
+                .filter(type => {
+                  const typeId = type._id || type.id;
+                  return availableOptions.types.includes(typeId) || currentFilters.selectedTypes.includes(typeId);
+                })
                 .map(type => {
-                  const isSelected = currentFilters.selectedTypes.includes(type.id);
-                  const count = filterCounts?.types[type.id] || 0;
+                  const typeId = type._id || type.id;
+                  const isSelected = currentFilters.selectedTypes.includes(typeId);
+                  const count = filterCounts?.types[typeId] || 0;
                   
                   return (
-                    <div key={type.id} className="flex items-center py-1">
+                    <div key={typeId} className="flex items-center py-1">
                       <input
                         type="checkbox"
-                        id={`type-${type.id}`}
+                        id={`type-${typeId}`}
                         checked={isSelected}
-                        onChange={(e) => handleFilterToggle('type', type.id, e.target.checked)}
+                        onChange={(e) => handleFilterToggle('type', typeId, e.target.checked)}
                         className="mr-2"
                       />
                       <label 
-                        htmlFor={`type-${type.id}`}
+                        htmlFor={`type-${typeId}`}
                         className="flex-1 cursor-pointer text-sm"
                       >
                         {type.name}
@@ -223,22 +231,26 @@ const ProductFilters = ({
         {isExpanded.brands && (
           <div className="mt-2 max-h-60 overflow-y-auto">
             {allBrands
-              .filter(brand => availableOptions.brands.includes(brand.id) || currentFilters.selectedBrands.includes(brand.id))
+              .filter(brand => {
+                const brandId = brand._id || brand.id;
+                return availableOptions.brands.includes(brandId) || currentFilters.selectedBrands.includes(brandId);
+              })
               .map(brand => {
-                const isSelected = currentFilters.selectedBrands.includes(brand.id);
-                const count = filterCounts?.brands[brand.id] || 0;
+                const brandId = brand._id || brand.id;
+                const isSelected = currentFilters.selectedBrands.includes(brandId);
+                const count = filterCounts?.brands[brandId] || 0;
                 
                 return (
-                  <div key={brand.id} className="flex items-center py-1">
+                  <div key={brandId} className="flex items-center py-1">
                     <input
                       type="checkbox"
-                      id={`brand-${brand.id}`}
+                      id={`brand-${brandId}`}
                       checked={isSelected}
-                      onChange={(e) => handleFilterToggle('brand', brand.id, e.target.checked)}
+                      onChange={(e) => handleFilterToggle('brand', brandId, e.target.checked)}
                       className="mr-2"
                     />
                     <label 
-                      htmlFor={`brand-${brand.id}`}
+                      htmlFor={`brand-${brandId}`}
                       className="flex-1 cursor-pointer text-sm"
                     >
                       {brand.name}
@@ -342,7 +354,7 @@ const ProductFilters = ({
           <h3 className="font-medium mb-2">Active Filters:</h3>
           <div className="flex flex-wrap gap-2">
             {currentFilters.selectedCategories.map(catId => {
-              const category = allCategories.find(c => c.id === catId);
+              const category = allCategories.find(c => (c._id || c.id) === catId);
               return (
                 <div key={catId} className="filter-pill bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center">
                   <span>{category?.name || catId}</span>
@@ -357,7 +369,7 @@ const ProductFilters = ({
             })}
             
             {currentFilters.selectedTypes.map(typeId => {
-              const type = allTypes.find(t => t.id === typeId);
+              const type = allTypes.find(t => (t._id || t.id) === typeId);
               return (
                 <div key={typeId} className="filter-pill bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center">
                   <span>{type?.name || typeId}</span>
@@ -372,7 +384,7 @@ const ProductFilters = ({
             })}
             
             {currentFilters.selectedBrands.map(brandId => {
-              const brand = allBrands.find(b => b.id === brandId);
+              const brand = allBrands.find(b => (b._id || b.id) === brandId);
               return (
                 <div key={brandId} className="filter-pill bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center">
                   <span>{brand?.name || brandId}</span>

@@ -6,8 +6,32 @@ import { formatPrice } from '../utils/formatters'
 
 const Cart = () => {
   // Get cart state and methods from context
-  const { cart, updateQuantity, removeItem, clearCart } = useCart();
-  const { items, total, itemCount } = cart;
+  const { cart, itemCount, total, updateQuantity, removeItem, clearCart } = useCart();
+
+  // Handle image errors with category-specific fallbacks
+  const handleImageError = (e, category) => {
+    const categoryLower = category?.toLowerCase() || '';
+    let placeholderUrl = 'https://placehold.co/400x400/252958/white?text=Liquor+Online';
+    
+    if (categoryLower.includes('whisky') || categoryLower.includes('whiskey')) {
+      placeholderUrl = 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80';
+    } else if (categoryLower.includes('vodka')) {
+      placeholderUrl = 'https://images.unsplash.com/photo-1608885898945-0a13dd4c25f0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80';
+    } else if (categoryLower.includes('gin')) {
+      placeholderUrl = 'https://images.unsplash.com/photo-1605989251086-b2a3650712f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80';
+    } else if (categoryLower.includes('tequila')) {
+      placeholderUrl = 'https://images.unsplash.com/photo-1585975772049-e863e4d2c9de?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80';
+    } else if (categoryLower.includes('rum')) {
+      placeholderUrl = 'https://images.unsplash.com/photo-1629803536067-3909e4dd8132?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80';
+    } else if (categoryLower.includes('wine')) {
+      placeholderUrl = 'https://images.unsplash.com/photo-1622813626435-3e4d7f81aded?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80';
+    } else if (categoryLower.includes('beer')) {
+      placeholderUrl = 'https://images.unsplash.com/photo-1618885472179-5e474019f2a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80';
+    }
+    
+    e.target.src = placeholderUrl;
+    e.target.onerror = null; // Prevent infinite loop
+  };
 
   return (
     <div className="py-8">
@@ -21,11 +45,11 @@ const Cart = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Cart Items */}
           <div className="w-full lg:w-2/3">
-            {items.length === 0 ? (
+            {cart.length === 0 ? (
               <div className="bg-gray-50 p-8 text-center rounded">
                 <h2 className="text-2xl font-medium mb-4">Your cart is empty</h2>
                 <p className="text-muted-foreground mb-6">Looks like you haven't added any products to your cart yet.</p>
-                <Link to="/shop" className="btn-primary px-6 py-2">
+                <Link to="/products" className="btn-primary px-6 py-2">
                   Continue Shopping
                 </Link>
               </div>
@@ -43,19 +67,21 @@ const Cart = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {items.map((item) => (
+                      {cart.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50">
                           {/* Product */}
                           <td className="py-4">
                             <div className="flex items-center">
-                              <Link to={`/product/${item.id}`}>
+                              <Link to={`/products/${item.id}`}>
                                 <img 
                                   src={item.image || "/placeholder.svg"} 
                                   alt={item.name}
                                   className="w-16 h-16 object-contain mr-4"
+                                  onError={(e) => handleImageError(e, item.category)}
+                                  data-category={item.category}
                                 />
                               </Link>
-                              <Link to={`/product/${item.id}`} className="hover:text-primary">
+                              <Link to={`/products/${item.id}`} className="hover:text-primary">
                                 {item.name}
                               </Link>
                             </div>
@@ -63,7 +89,7 @@ const Cart = () => {
                           
                           {/* Price */}
                           <td className="py-4 text-center">
-                            {formatPrice(item.price)}
+                            ${item.price.toFixed(2)}
                           </td>
                           
                           {/* Quantity */}
@@ -93,7 +119,7 @@ const Cart = () => {
                           
                           {/* Subtotal */}
                           <td className="py-4 text-center font-medium">
-                            {formatPrice(item.price * item.quantity)}
+                            ${(item.price * item.quantity).toFixed(2)}
                           </td>
                           
                           {/* Actions */}
@@ -113,7 +139,7 @@ const Cart = () => {
                 
                 <div className="flex justify-between mb-8">
                   <div>
-                    <Link to="/shop" className="text-primary hover:underline">
+                    <Link to="/products" className="text-primary hover:underline">
                       ← Continue Shopping
                     </Link>
                   </div>
@@ -137,7 +163,7 @@ const Cart = () => {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
                   <span>Subtotal ({itemCount} items)</span>
-                  <span>{formatPrice(total)}</span>
+                  <span>${total ? total.toFixed(2) : '0.00'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
@@ -145,13 +171,13 @@ const Cart = () => {
                 </div>
                 <div className="flex justify-between font-medium pt-3 border-t">
                   <span>Total</span>
-                  <span>{formatPrice(total)}</span>
+                  <span>${total ? total.toFixed(2) : '0.00'}</span>
                 </div>
               </div>
               <Link 
                 to="/checkout"
-                className={`w-full btn-primary py-3 px-4 text-center block ${items.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={(e) => items.length === 0 && e.preventDefault()}
+                className={`w-full btn-primary py-3 px-4 text-center block ${cart.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={(e) => cart.length === 0 && e.preventDefault()}
               >
                 Proceed to Checkout
               </Link>

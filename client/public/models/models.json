@@ -1,0 +1,20 @@
+{
+  "models": [
+    {
+      "name": "wine_bottle",
+      "description": "Standard wine bottle model",
+      "credits": "Model created for Liquor Online project"
+    },
+    {
+      "name": "whiskey_bottle",
+      "description": "Whiskey bottle with detailed glass texture",
+      "credits": "Model created for Liquor Online project"
+    },
+    {
+      "name": "champagne_bottle",
+      "description": "Champagne bottle with cork and foil",
+      "credits": "Model created for Liquor Online project"
+    }
+  ],
+  "note": "These models are placeholders. Real 3D models should be added to the models directory as .glb files. The bottle components will automatically use simple 3D geometry if the model files are not present."
+} 

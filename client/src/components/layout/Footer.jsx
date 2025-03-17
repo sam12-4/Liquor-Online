@@ -1,6 +1,31 @@
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { FaAngleUp } from 'react-icons/fa';
 
 const Footer = () => {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Show button when user scrolls down 300px
+  useEffect(() => {
+    const checkScrollTop = () => {
+      if (!showScrollTop && window.pageYOffset > 300) {
+        setShowScrollTop(true);
+      } else if (showScrollTop && window.pageYOffset <= 300) {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', checkScrollTop);
+    return () => window.removeEventListener('scroll', checkScrollTop);
+  }, [showScrollTop]);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <footer className="bg-muted">
       <div className="container-fluid py-12">
@@ -47,7 +72,7 @@ const Footer = () => {
               </div>
             </div>
           </div>
-
+          
           {/* Column 2 - Customer Services */}
           <div>
             <h3 className="text-lg font-medium text-neutral-dark mb-4 uppercase">Customer Services</h3>
@@ -59,7 +84,7 @@ const Footer = () => {
               <li><Link to="/finance" className="hover:text-primary">Interest Free Finance</Link></li>
             </ul>
           </div>
-
+          
           {/* Column 3 - About Us */}
           <div>
             <h3 className="text-lg font-medium text-neutral-dark mb-4 uppercase">About Us</h3>
@@ -68,13 +93,13 @@ const Footer = () => {
               <li><Link to="/contact" className="hover:text-primary">Contact Us</Link></li>
               <li><Link to="/special-orders" className="hover:text-primary">Special Orders</Link></li>
               <li><Link to="/product-tag/special-allocations" className="hover:text-primary">Special Allocations</Link></li>
-              <li><Link to="/private-and-commercial" className="hover:text-primary">Private Functions</Link></li>
-              <li><Link to="/private-and-commercial" className="hover:text-primary">Commercial</Link></li>
-              <li><Link to="/free_draw" className="hover:text-primary">Free Draw</Link></li>
+              <li><Link to="/private-commercial" className="hover:text-primary">Private Functions</Link></li>
+              <li><Link to="/private-commercial" className="hover:text-primary">Commercial</Link></li>
+              <li><Link to="/free-draw" className="hover:text-primary">Free Draw</Link></li>
               <li><Link to="/product-tag/limited-time-offers" className="hover:text-primary">Limited Time Offers</Link></li>
             </ul>
           </div>
-
+          
           {/* Column 4 - Discover More */}
           <div>
             <h3 className="text-lg font-medium text-neutral-dark mb-4 uppercase">Discover More</h3>
@@ -88,7 +113,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
-
+      
       {/* Bottom Bar */}
       <div className="border-t border-gray-200 py-4">
         <div className="container-fluid flex flex-col md:flex-row justify-between items-center">
@@ -100,8 +125,19 @@ const Footer = () => {
           </div>
         </div>
       </div>
+      
+      {/* Scroll to top button - Keep this new feature */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 bg-primary hover:bg-primary-dark text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 transform hover:scale-110 z-50"
+          aria-label="Scroll to top"
+        >
+          <FaAngleUp size={24} />
+        </button>
+      )}
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;

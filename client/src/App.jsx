@@ -1,80 +1,56 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
-import { CartProvider } from './contexts/CartContext.jsx'
-import { Layout } from './components/layout/Layout.jsx'
-import { ROUTES } from './constants/routes.js'
+import React, { useEffect } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { loadUser } from './actions/authActions';
+import { setAuthToken } from './utils/setAuthToken';
 
-// Pages
-import Home from './pages/Home'
-import ProductsPage from './pages/ProductsPage'
-import ProductDetail from './pages/ProductDetail'
-import Cart from './pages/Cart'
-import Contact from './pages/Contact'
-import About from './pages/About'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Checkout from './pages/Checkout'
-import ContactFaq from './pages/ContactFaq'
-import TrackOrder from './pages/TrackOrder'
-import Returns from './pages/Returns'
-import Shipping from './pages/Shipping'
-import Finance from './pages/Finance'
-import SpecialOrders from './pages/SpecialOrders'
-import PrivateCommercial from './pages/PrivateCommercial'
-import FreeDraw from './pages/FreeDraw'
-import Jobs from './pages/Jobs'
+// Components
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
+import Alert from './components/layout/Alert';
+import ScrollToTop from './components/ScrollToTop';
 
-function App() {
-  const location = useLocation();
+// Routes
+import { routes } from './routes';
 
-  // Debug route changes
-  useEffect(() => {
-    console.log('Route changed:', {
-      pathname: location.pathname,
-      search: location.search,
-      hash: location.hash,
-      state: location.state,
-      key: location.key
-    });
-  }, [location]);
+// CSS
+import './index.css';
 
-  return (
-    <CartProvider>
-      <Routes>
-        <Route path={ROUTES.HOME} element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path={ROUTES.SHOP} element={<ProductsPage />} />
-          <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetail />} />
-          <Route path={ROUTES.CART} element={<Cart />} />
-          <Route path={ROUTES.PRODUCT_CATEGORY} element={<ProductsPage />} />
-          <Route path="/product-tag/:tag" element={<ProductsPage />} />
-          <Route path={ROUTES.BRAND} element={<ProductsPage />} />
-          
-          {/* Footer Links - Customer Services */}
-          <Route path={ROUTES.CONTACT_FAQ} element={<ContactFaq />} />
-          <Route path={ROUTES.TRACK_ORDER} element={<TrackOrder />} />
-          <Route path={ROUTES.RETURNS} element={<Returns />} />
-          <Route path={ROUTES.SHIPPING} element={<Shipping />} />
-          <Route path={ROUTES.FINANCE} element={<Finance />} />
-          
-          {/* Footer Links - About Us */}
-          <Route path={ROUTES.ABOUT} element={<About />} />
-          <Route path={ROUTES.CONTACT} element={<Contact />} />
-          <Route path={ROUTES.SPECIAL_ORDERS} element={<SpecialOrders />} />
-          <Route path={ROUTES.PRIVATE_COMMERCIAL} element={<PrivateCommercial />} />
-          <Route path={ROUTES.FREE_DRAW} element={<FreeDraw />} />
-          
-          {/* Footer Links - Discover More */}
-          <Route path={ROUTES.JOBS} element={<Jobs />} />
-          
-          {/* Authentication & Checkout */}
-          <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route path={ROUTES.REGISTER} element={<Register />} />
-          <Route path={ROUTES.CHECKOUT} element={<Checkout />} />
-        </Route>
-      </Routes>
-    </CartProvider>
-  )
+// Check for token on initial load
+if (localStorage.token) {
+  setAuthToken(localStorage.token);
 }
 
-export default App
+const App = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(loadUser());
+  }, [dispatch]);
+
+  return (
+    <div className="app">
+      <ScrollToTop />
+      <Header />
+      <main className="main-content">
+        <Alert />
+        <Routes>
+          {routes.map((route, index) => {
+            const RouteElement = route.component;
+            return (
+              <Route 
+                key={index}
+                path={route.path}
+                element={<RouteElement />}
+                exact={route.exact}
+              />
+            );
+          })}
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default App;
