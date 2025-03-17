@@ -12,8 +12,21 @@ class TypeService {
   async getAllTypes() {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.TYPES}`);
-      return response.data.map(type => Type.fromJSON(type));
+      
+      // Handle different response structures
+      const typesData = response.data && response.data.data 
+        ? response.data.data 
+        : Array.isArray(response.data) 
+          ? response.data 
+          : [];
+          
+      return typesData.map(type => Type.fromJSON(type));
     } catch (error) {
+      // If endpoint doesn't exist (404), return empty array instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn('Types endpoint not found, returning empty array');
+        return [];
+      }
       console.error('Error fetching types:', error);
       throw error;
     }
@@ -27,8 +40,19 @@ class TypeService {
   async getTypeById(id) {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.TYPE_BY_ID(id)}`);
-      return Type.fromJSON(response.data);
+      
+      // Handle different response structures
+      const typeData = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Type.fromJSON(typeData);
     } catch (error) {
+      // If endpoint doesn't exist (404), return null instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn(`Type with ID ${id} not found`);
+        return null;
+      }
       console.error(`Error fetching type with ID ${id}:`, error);
       throw error;
     }
@@ -57,7 +81,12 @@ class TypeService {
         );
       }
       
-      return Type.fromJSON(response.data);
+      // Handle different response structures
+      const savedType = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Type.fromJSON(savedType);
     } catch (error) {
       console.error('Error saving type:', error);
       throw error;
@@ -74,6 +103,11 @@ class TypeService {
       await axios.delete(`${API_BASE_URL}${ENDPOINTS.TYPE_BY_ID(id)}`);
       return true;
     } catch (error) {
+      // If endpoint doesn't exist (404), log warning but don't throw
+      if (error.response && error.response.status === 404) {
+        console.warn(`Type with ID ${id} not found or already deleted`);
+        return true;
+      }
       console.error(`Error deleting type with ID ${id}:`, error);
       throw error;
     }

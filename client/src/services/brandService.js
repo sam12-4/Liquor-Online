@@ -12,8 +12,21 @@ class BrandService {
   async getAllBrands() {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.BRANDS}`);
-      return response.data.map(brand => Brand.fromJSON(brand));
+      
+      // Handle different response structures
+      const brandsData = response.data && response.data.data 
+        ? response.data.data 
+        : Array.isArray(response.data) 
+          ? response.data 
+          : [];
+          
+      return brandsData.map(brand => Brand.fromJSON(brand));
     } catch (error) {
+      // If endpoint doesn't exist (404), return empty array instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn('Brands endpoint not found, returning empty array');
+        return [];
+      }
       console.error('Error fetching brands:', error);
       throw error;
     }
@@ -27,8 +40,19 @@ class BrandService {
   async getBrandById(id) {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.BRAND_BY_ID(id)}`);
-      return Brand.fromJSON(response.data);
+      
+      // Handle different response structures
+      const brandData = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Brand.fromJSON(brandData);
     } catch (error) {
+      // If endpoint doesn't exist (404), return null instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn(`Brand with ID ${id} not found`);
+        return null;
+      }
       console.error(`Error fetching brand with ID ${id}:`, error);
       throw error;
     }
@@ -57,7 +81,12 @@ class BrandService {
         );
       }
       
-      return Brand.fromJSON(response.data);
+      // Handle different response structures
+      const savedBrand = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Brand.fromJSON(savedBrand);
     } catch (error) {
       console.error('Error saving brand:', error);
       throw error;
@@ -74,6 +103,11 @@ class BrandService {
       await axios.delete(`${API_BASE_URL}${ENDPOINTS.BRAND_BY_ID(id)}`);
       return true;
     } catch (error) {
+      // If endpoint doesn't exist (404), log warning but don't throw
+      if (error.response && error.response.status === 404) {
+        console.warn(`Brand with ID ${id} not found or already deleted`);
+        return true;
+      }
       console.error(`Error deleting brand with ID ${id}:`, error);
       throw error;
     }

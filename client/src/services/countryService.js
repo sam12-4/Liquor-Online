@@ -12,8 +12,21 @@ class CountryService {
   async getAllCountries() {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.COUNTRIES}`);
-      return response.data.map(country => Country.fromJSON(country));
+      
+      // Handle different response structures
+      const countriesData = response.data && response.data.data 
+        ? response.data.data 
+        : Array.isArray(response.data) 
+          ? response.data 
+          : [];
+          
+      return countriesData.map(country => Country.fromJSON(country));
     } catch (error) {
+      // If endpoint doesn't exist (404), return empty array instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn('Countries endpoint not found, returning empty array');
+        return [];
+      }
       console.error('Error fetching countries:', error);
       throw error;
     }
@@ -27,8 +40,19 @@ class CountryService {
   async getCountryById(id) {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.COUNTRY_BY_ID(id)}`);
-      return Country.fromJSON(response.data);
+      
+      // Handle different response structures
+      const countryData = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Country.fromJSON(countryData);
     } catch (error) {
+      // If endpoint doesn't exist (404), return null instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn(`Country with ID ${id} not found`);
+        return null;
+      }
       console.error(`Error fetching country with ID ${id}:`, error);
       throw error;
     }
@@ -57,7 +81,12 @@ class CountryService {
         );
       }
       
-      return Country.fromJSON(response.data);
+      // Handle different response structures
+      const savedCountry = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Country.fromJSON(savedCountry);
     } catch (error) {
       console.error('Error saving country:', error);
       throw error;
@@ -74,6 +103,11 @@ class CountryService {
       await axios.delete(`${API_BASE_URL}${ENDPOINTS.COUNTRY_BY_ID(id)}`);
       return true;
     } catch (error) {
+      // If endpoint doesn't exist (404), log warning but don't throw
+      if (error.response && error.response.status === 404) {
+        console.warn(`Country with ID ${id} not found or already deleted`);
+        return true;
+      }
       console.error(`Error deleting country with ID ${id}:`, error);
       throw error;
     }

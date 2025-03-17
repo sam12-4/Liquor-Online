@@ -12,8 +12,21 @@ class CategoryService {
   async getAllCategories() {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.CATEGORIES}`);
-      return response.data.map(category => Category.fromJSON(category));
+      
+      // Handle different response structures
+      const categoriesData = response.data && response.data.data 
+        ? response.data.data 
+        : Array.isArray(response.data) 
+          ? response.data 
+          : [];
+          
+      return categoriesData.map(category => Category.fromJSON(category));
     } catch (error) {
+      // If endpoint doesn't exist (404), return empty array instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn('Categories endpoint not found, returning empty array');
+        return [];
+      }
       console.error('Error fetching categories:', error);
       throw error;
     }
@@ -27,8 +40,19 @@ class CategoryService {
   async getCategoryById(id) {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.CATEGORY_BY_ID(id)}`);
-      return Category.fromJSON(response.data);
+      
+      // Handle different response structures
+      const categoryData = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Category.fromJSON(categoryData);
     } catch (error) {
+      // If endpoint doesn't exist (404), return null instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn(`Category with ID ${id} not found`);
+        return null;
+      }
       console.error(`Error fetching category with ID ${id}:`, error);
       throw error;
     }
@@ -57,7 +81,12 @@ class CategoryService {
         );
       }
       
-      return Category.fromJSON(response.data);
+      // Handle different response structures
+      const savedCategory = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Category.fromJSON(savedCategory);
     } catch (error) {
       console.error('Error saving category:', error);
       throw error;
@@ -74,6 +103,11 @@ class CategoryService {
       await axios.delete(`${API_BASE_URL}${ENDPOINTS.CATEGORY_BY_ID(id)}`);
       return true;
     } catch (error) {
+      // If endpoint doesn't exist (404), log warning but don't throw
+      if (error.response && error.response.status === 404) {
+        console.warn(`Category with ID ${id} not found or already deleted`);
+        return true;
+      }
       console.error(`Error deleting category with ID ${id}:`, error);
       throw error;
     }

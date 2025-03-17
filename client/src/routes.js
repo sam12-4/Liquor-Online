@@ -54,27 +54,27 @@ const routes = [
     path: '/contact',
     component: Contact
   },
-  {
-    path: '/products',
-    exact: true,
-    component: ProductsPage
-  },
-  {
-    path: '/products/:id',
-    component: ProductDetail
-  },
-  {
-    path: '/product-category/:category',
-    component: ProductsPage
-  },
-  {
-    path: '/brand/:brand',
-    component: ProductsPage
-  },
-  {
-    path: '/product-tag/:tag',
-    component: ProductsPage
-  },
+  // {
+  //   path: '/products',
+  //   exact: true,
+  //   component: ProductsPage
+  // },
+  // {
+  //   path: '/products/:id',
+  //   component: ProductDetail
+  // },
+  // {
+  //   path: '/product-category/:category',
+  //   component: ProductsPage
+  // },
+  // {
+  //   path: '/brand/:brand',
+  //   component: ProductsPage
+  // },
+  // {
+  //   path: '/product-tag/:tag',
+  //   component: ProductsPage
+  // },
   {
     path: '/cart',
     component: Cart

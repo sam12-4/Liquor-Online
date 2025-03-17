@@ -16,8 +16,21 @@ class ProductService {
   async getAllProducts() {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}`);
-      return response.data.map(product => Product.fromJSON(product));
+      
+      // Handle different response structures
+      const productsData = response.data && response.data.data 
+        ? response.data.data 
+        : Array.isArray(response.data) 
+          ? response.data 
+          : [];
+          
+      return productsData.map(product => Product.fromJSON(product));
     } catch (error) {
+      // If endpoint doesn't exist (404), return empty array instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn('Products endpoint not found, returning empty array');
+        return [];
+      }
       console.error('Error fetching products:', error);
       throw error;
     }
@@ -32,7 +45,13 @@ class ProductService {
   async getProductById(id) {
     try {
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCT_BY_ID(id)}`);
-      return Product.fromJSON(response.data);
+      
+      // Handle different response structures
+      const productData = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Product.fromJSON(productData);
     } catch (error) {
       console.error(`Error fetching product with ID ${id}:`, error);
       throw new Error(`Product not found: ${error.message}`);
@@ -79,8 +98,21 @@ class ProductService {
       
       // Make API request with query parameters
       const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}?${params.toString()}`);
-      return response.data.map(product => Product.fromJSON(product));
+      
+      // Handle different response structures
+      const productsData = response.data && response.data.data 
+        ? response.data.data 
+        : Array.isArray(response.data) 
+          ? response.data 
+          : [];
+          
+      return productsData.map(product => Product.fromJSON(product));
     } catch (error) {
+      // If endpoint doesn't exist (404), return empty array instead of throwing
+      if (error.response && error.response.status === 404) {
+        console.warn('Products search endpoint not found, returning empty array');
+        return [];
+      }
       console.error('Error searching products:', error);
       throw error;
     }
@@ -109,7 +141,12 @@ class ProductService {
         );
       }
       
-      return Product.fromJSON(response.data);
+      // Handle different response structures
+      const savedProduct = response.data && response.data.data 
+        ? response.data.data 
+        : response.data;
+        
+      return Product.fromJSON(savedProduct);
     } catch (error) {
       console.error('Error saving product:', error);
       throw error;
