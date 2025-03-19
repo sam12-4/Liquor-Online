@@ -1,171 +1,77 @@
-import axios from 'axios';
 import Product from '../models/Product';
-import { ENDPOINTS } from './api/endpoints';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import dummyProducts from '../data/dummyData';
 
 /**
  * Service for product-related operations
- * This centralizes all the product data access in one place
+ * Using dummy data instead of API calls
  */
 class ProductService {
   /**
-   * Retrieves all products from the backend API.
+   * Retrieves all products from dummy data
    * @returns {Promise<Product[]>} Array of product instances
    */
   async getAllProducts() {
-    try {
-      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}`);
-      
-      // Handle different response structures
-      const productsData = response.data && response.data.data 
-        ? response.data.data 
-        : Array.isArray(response.data) 
-          ? response.data 
-          : [];
-          
-      return productsData.map(product => Product.fromJSON(product));
-    } catch (error) {
-      // If endpoint doesn't exist (404), return empty array instead of throwing
-      if (error.response && error.response.status === 404) {
-        console.warn('Products endpoint not found, returning empty array');
-        return [];
-      }
-      console.error('Error fetching products:', error);
-      throw error;
-    }
+    return dummyProducts.map(product => Product.fromJSON(product));
   }
   
   /**
-   * Fetches a specific product by its unique identifier.
+   * Fetches a specific product by its unique identifier
    * @param {string} id Product ID
    * @returns {Promise<Product>} Product instance
-   * @throws {Error} When product is not found
    */
   async getProductById(id) {
-    try {
-      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCT_BY_ID(id)}`);
-      
-      // Handle different response structures
-      const productData = response.data && response.data.data 
-        ? response.data.data 
-        : response.data;
-        
-      return Product.fromJSON(productData);
-    } catch (error) {
-      console.error(`Error fetching product with ID ${id}:`, error);
-      throw new Error(`Product not found: ${error.message}`);
-    }
+    const product = dummyProducts.find(p => p.id.toString() === id.toString());
+    return product ? Product.fromJSON(product) : null;
   }
   
   /**
-   * Searches for products based on specified criteria.
-   * @param {Object} criteria Search parameters (name, category, price range, etc.)
+   * Searches for products based on specified criteria
+   * @param {Object} criteria Search parameters
    * @returns {Promise<Product[]>} Array of matching product instances
    */
   async searchProducts(criteria = {}) {
-    try {
-      // Build query parameters
-      const params = new URLSearchParams();
-      
-      if (criteria.query) {
-        params.append('query', criteria.query);
-      }
-      
-      if (criteria.category) {
-        params.append('category', criteria.category);
-      }
-      
-      if (criteria.brand) {
-        params.append('brand', criteria.brand);
-      }
-      
-      if (criteria.type) {
-        params.append('type', criteria.type);
-      }
-      
-      if (criteria.minPrice) {
-        params.append('minPrice', criteria.minPrice);
-      }
-      
-      if (criteria.maxPrice) {
-        params.append('maxPrice', criteria.maxPrice);
-      }
-      
-      if (criteria.inStock !== undefined) {
-        params.append('inStock', criteria.inStock);
-      }
-      
-      // Make API request with query parameters
-      const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.PRODUCTS}?${params.toString()}`);
-      
-      // Handle different response structures
-      const productsData = response.data && response.data.data 
-        ? response.data.data 
-        : Array.isArray(response.data) 
-          ? response.data 
-          : [];
-          
-      return productsData.map(product => Product.fromJSON(product));
-    } catch (error) {
-      // If endpoint doesn't exist (404), return empty array instead of throwing
-      if (error.response && error.response.status === 404) {
-        console.warn('Products search endpoint not found, returning empty array');
-        return [];
-      }
-      console.error('Error searching products:', error);
-      throw error;
+    let filteredProducts = [...dummyProducts];
+    
+    // Apply filters based on criteria
+    if (criteria.category) {
+      filteredProducts = filteredProducts.filter(p => p.category === criteria.category);
     }
+    if (criteria.brand) {
+      filteredProducts = filteredProducts.filter(p => p.brand === criteria.brand);
+    }
+    if (criteria.search) {
+      const searchLower = criteria.search.toLowerCase();
+      filteredProducts = filteredProducts.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        p.description.toLowerCase().includes(searchLower)
+      );
+    }
+    if (criteria.minPrice) {
+      filteredProducts = filteredProducts.filter(p => p.price >= criteria.minPrice);
+    }
+    if (criteria.maxPrice) {
+      filteredProducts = filteredProducts.filter(p => p.price <= criteria.maxPrice);
+    }
+    
+    return filteredProducts.map(product => Product.fromJSON(product));
   }
   
   /**
-   * Creates a new product or updates an existing one.
+   * Creates a new product or updates an existing one (in memory only)
    * @param {Product} product Product instance to save
-   * @returns {Promise<Product>} Saved product instance with updated fields
+   * @returns {Promise<Product>} Saved product instance
    */
   async saveProduct(product) {
-    try {
-      let response;
-      
-      if (product.id) {
-        // Update existing product
-        response = await axios.put(
-          `${API_BASE_URL}${ENDPOINTS.PRODUCT_BY_ID(product.id)}`,
-          product.toJSON()
-        );
-      } else {
-        // Create new product
-        response = await axios.post(
-          `${API_BASE_URL}${ENDPOINTS.PRODUCTS}`,
-          product.toJSON()
-        );
-      }
-      
-      // Handle different response structures
-      const savedProduct = response.data && response.data.data 
-        ? response.data.data 
-        : response.data;
-        
-      return Product.fromJSON(savedProduct);
-    } catch (error) {
-      console.error('Error saving product:', error);
-      throw error;
-    }
+    return Product.fromJSON(product);
   }
   
   /**
-   * Permanently removes a product from the system.
+   * Simulates product deletion (no actual deletion in dummy data)
    * @param {string} id Product ID to delete
-   * @returns {Promise<boolean>} True if deletion was successful
+   * @returns {Promise<boolean>} Always returns true
    */
   async deleteProduct(id) {
-    try {
-      await axios.delete(`${API_BASE_URL}${ENDPOINTS.PRODUCT_BY_ID(id)}`);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting product with ID ${id}:`, error);
-      throw error;
-    }
+    return true;
   }
 }
 

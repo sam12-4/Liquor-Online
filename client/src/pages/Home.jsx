@@ -31,7 +31,7 @@ import LuxuryBackground from "../components/LuxuryBackground.jsx"
 import WineGallery from "../components/Wine-gallery.jsx"
 import ErrorBoundary from "../components/ErrorBoundary"
 import Product from "../models/Product"
-import ProductService from "../services/ProductService"
+import productService from "../services/productService"
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
@@ -487,12 +487,12 @@ const Home = () => {
         setLoading(true)
         
         // Use ProductService to get products
-        const allProducts = await ProductService.getAllProducts()
+        const allProducts = await productService.getAllProducts()
         setProducts(allProducts)
         
         // Set featured products
         setFeaturedProducts(
-          allProducts.filter(p => p.featured || p.category.toLowerCase() === "wine").slice(0, 8)
+          allProducts.filter(p => p.featured || (p.category && p.category.toLowerCase() === "wine")).slice(0, 8)
         )
         
         // Set new arrivals 
@@ -550,7 +550,7 @@ const Home = () => {
           <img
             src={product.image || "/placeholder.svg?height=400&width=400"}
             alt={product.name}
-            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
             onError={(e) => handleImageError(e, product.category)}
             data-category={product.category}
           />
@@ -913,7 +913,7 @@ const Home = () => {
       </div>
 
       {/* Hero Section */}
-      <div ref={heroRef} className="relative">
+      <div ref={heroRef} className="relative h-screen">
         <ErrorBoundary fallback={
           <div className="h-screen flex items-center justify-center bg-gradient-to-r from-gray-900 to-gray-800 text-white">
             <div className="text-center p-8">
@@ -921,8 +921,8 @@ const Home = () => {
               <p className="mb-8 text-xl">Discover our exquisite selection</p>
               <Link to="/products" className="inline-block px-6 py-3 bg-[#aa4c40] text-white transition hover:bg-[#8a3d33]">
                 Shop Now
-          </Link>
-        </div>
+              </Link>
+            </div>
           </div>
         }>
           <HeroSection slides={heroSlides} onLoaded={() => setHeroLoaded(true)} />
@@ -937,11 +937,11 @@ const Home = () => {
             <p className="section-description text-gray-600 max-w-2xl mx-auto">
               Discover our extensive collection of premium spirits, wines, and more.
             </p>
-            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {categoryLinks.map((category) => (
-          <Link 
+              <Link 
                 key={category.id}
                 to={category.link}
                 className="category-item group relative overflow-hidden rounded-lg shadow-md"
@@ -952,7 +952,7 @@ const Home = () => {
                     alt={category.name}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-            </div>
+                                  </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity group-hover:opacity-90">
                   <div className="flex h-full flex-col items-center justify-end p-4 text-center text-white">
                     {category.icon}
@@ -960,12 +960,12 @@ const Home = () => {
                     <span className="flex items-center text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                       Shop Collection <FaChevronRight className="ml-1" />
                     </span>
-          </div>
-            </div>
+                  </div>
+                </div>
               </Link>
             ))}
+          </div>
         </div>
-      </div>
 
         {/* Premium Collection Showcase */}
         <div ref={premiumRef} className="my-16 py-12 relative overflow-hidden rounded-lg shadow-xl">
@@ -976,7 +976,7 @@ const Home = () => {
               <Link to="/products?premium=true" className="inline-block px-6 py-3 bg-[#aa4c40] text-white hover:bg-[#8a3d33]">
                 Discover Premium
               </Link>
-          </div>
+            </div>
           }>
             <PremiumShowcase />
           </ErrorBoundary>
@@ -989,7 +989,7 @@ const Home = () => {
             <p className="section-description text-gray-600 max-w-2xl mx-auto">
               Curated selections of our finest products for every occasion.
             </p>
-      </div>
+          </div>
 
           <div className="grid gap-8 md:grid-cols-2">
             {/* Vintage Collection */}
@@ -999,8 +999,8 @@ const Home = () => {
                   src="https://ext.same-assets.com/3866796577/2044621091.jpeg"
                   alt="Vintage Collection"
                   className="h-full w-full object-cover transition duration-700 ease-in-out hover:scale-110"
-            />
-          </div>
+                />
+              </div>
               <div className="absolute inset-0 flex items-center justify-start bg-gradient-to-r from-black/70 to-transparent p-10">
                 <div className="text-white">
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wider">Vintage</div>
@@ -1012,7 +1012,7 @@ const Home = () => {
                     <span className="relative z-10">Shop now</span>
                     <span className="absolute inset-0 bg-white transform scale-y-0 group-hover:scale-y-100 transition-transform origin-bottom duration-300"></span>
                   </Link>
-          </div>
+                </div>
               </div>
             </div>
 
@@ -1023,8 +1023,8 @@ const Home = () => {
                   src="https://ext.same-assets.com/2086064594/3125804342.jpeg"
                   alt="Fine Wines Collection"
                   className="h-full w-full object-cover transition duration-700 ease-in-out hover:scale-110"
-            />
-          </div>
+                />
+              </div>
               <div className="absolute inset-0 flex items-center justify-start bg-gradient-to-r from-black/70 to-transparent p-10">
                 <div className="text-white">
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wider">Special Selection</div>
@@ -1044,7 +1044,7 @@ const Home = () => {
               </div>
             </div>
           </div>
-      </div>
+        </div>
 
         {/* Wine Gallery */}
         <div className="my-16">
@@ -1054,11 +1054,11 @@ const Home = () => {
               <p className="mb-6 text-gray-600 max-w-lg mx-auto">
                 Explore our handpicked selection of exceptional wines.
               </p>
-          </div>
+            </div>
           }>
             <WineGallery />
           </ErrorBoundary>
-          </div>
+        </div>
 
         {/* Popular Categories - Product Showcase */}
         <div ref={productsRef} className="my-16">
@@ -1072,38 +1072,38 @@ const Home = () => {
           {/* Category filter tabs */}
           <div className="flex justify-center mb-8 overflow-x-auto pb-2">
             <div className="flex space-x-2 md:space-x-4">
-                <button 
+              <button 
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${activeCategory === "all" ? "bg-[#aa4c40] text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
                 onClick={() => setActiveCategory("all")}
               >
                 All
-                </button>
-                <button 
+              </button>
+              <button 
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${activeCategory === "wine" ? "bg-[#aa4c40] text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
                 onClick={() => setActiveCategory("wine")}
               >
                 Wine
-                </button>
-                <button 
+              </button>
+              <button 
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${activeCategory === "whiskey" ? "bg-[#aa4c40] text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
                 onClick={() => setActiveCategory("whiskey")}
               >
                 Whiskey
-                </button>
-                <button 
+              </button>
+              <button 
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${activeCategory === "vodka" ? "bg-[#aa4c40] text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
                 onClick={() => setActiveCategory("vodka")}
               >
                 Vodka
-                </button>
-                <button 
+              </button>
+              <button 
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${activeCategory === "tequila" ? "bg-[#aa4c40] text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
                 onClick={() => setActiveCategory("tequila")}
               >
                 Tequila
-                </button>
-              </div>
+              </button>
             </div>
+          </div>
 
           <div className="relative px-8">
             <Slider {...productSliderSettings}>
@@ -1112,8 +1112,8 @@ const Home = () => {
                   <ProductCard product={product} />
                 </div>
               ))}
-          </Slider>
-      </div>
+            </Slider>
+          </div>
 
           <div className="text-center mt-8">
             <Link
@@ -1121,9 +1121,9 @@ const Home = () => {
               className="inline-block px-6 py-3 border-2 border-[#aa4c40] text-[#aa4c40] font-medium transition-all duration-300 hover:bg-[#aa4c40] hover:text-white"
             >
               View All Products
-                </Link>
-                </div>
-              </div>
+            </Link>
+          </div>
+        </div>
 
         {/* Featured Brands */}
         <div ref={brandsRef} className="my-16">
@@ -1132,7 +1132,7 @@ const Home = () => {
             <p className="section-description text-gray-600 max-w-2xl mx-auto">
               Discover premium brands that represent excellence and quality.
             </p>
-      </div>
+          </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {featuredBrands.map((brand) => (
@@ -1143,19 +1143,19 @@ const Home = () => {
                     alt={brand.name}
                     className="max-h-24 max-w-full object-contain transition-transform duration-300 group-hover:scale-110"
                   />
-              </div>
+                </div>
                 <div className="text-center mt-2 text-sm font-medium text-gray-700">{brand.name}</div>
-                </Link>
+              </Link>
             ))}
+          </div>
         </div>
-      </div>
 
         {/* Testimonials */}
         <div ref={testimonialsRef} className="my-16 rounded-lg bg-[#f2f2f0] py-16 shadow-inner">
           <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
             <div className="mb-6 flex justify-center">
               <FaQuoteLeft size={36} className="text-[#aa4c40]" />
-          </div>
+            </div>
             <h2 className="section-header mb-12 text-3xl font-bold text-gray-800">CUSTOMER TESTIMONIALS</h2>
 
             <Slider {...testimonialSettings}>
@@ -1169,17 +1169,17 @@ const Home = () => {
                         alt={testimonial.author}
                         className="h-full w-full object-cover"
                       />
-                </div>
+                    </div>
                     <div className="ml-4 text-left">
                       <div className="font-bold text-gray-800">{testimonial.author}</div>
                       <div className="text-sm text-gray-500">{testimonial.position}</div>
-              </div>
-          </div>
-        </div>
+                    </div>
+                  </div>
+                </div>
               ))}
             </Slider>
-              </div>
-            </div>
+          </div>
+        </div>
 
         {/* Newsletter Subscription */}
         <div ref={newsletterRef} className="my-16">
@@ -1201,7 +1201,7 @@ const Home = () => {
                       required
                       aria-label="Email address"
                     />
-              </div>
+                  </div>
                   <button
                     type="submit"
                     className="w-full md:w-auto px-6 py-3 bg-white text-[#aa4c40] font-medium rounded-md transition-all duration-300 hover:bg-gray-100 hover:shadow-lg"
@@ -1209,7 +1209,7 @@ const Home = () => {
                     Subscribe Now
                   </button>
                 </form>
-      </div>
+              </div>
 
               <div className="md:w-1/2 relative h-48 md:h-auto">
                 <img
@@ -1226,31 +1226,45 @@ const Home = () => {
                     <p className="text-sm text-gray-600">
                       Get exclusive access to limited edition wines and special member discounts.
                     </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-            </div>
-            </div>
-            </div>
-            </div>
         </div>
       </div>
 
       {/* Floating cart button */}
       <Link
         to="/cart"
-        className="cart-button fixed bottom-6 right-6 z-50 bg-[#aa4c40] text-white p-4 rounded-full shadow-lg hover:bg-[#8a3d33] transition-all duration-300 hover:scale-110"
-        aria-label="View cart"
+        className="cart-button fixed bottom-8 right-8 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-[#aa4c40] text-white shadow-lg transition-all duration-300 hover:bg-[#8a3d33] hover:scale-110"
       >
         <FaShoppingCart size={24} />
       </Link>
 
       {/* Back to top button */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed bottom-6 left-6 z-50 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-all duration-300 hover:scale-110"
+        onClick={() => {
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          })
+        }}
+        className="fixed bottom-8 left-8 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[#aa4c40] shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110"
         aria-label="Back to top"
       >
-        <FaChevronUp size={20} />
-              </button>
+        <FaChevronUp size={24} />
+      </button>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80">
+          <div className="text-center">
+            <div className="mb-4 h-16 w-16 animate-spin rounded-full border-8 border-[#aa4c40] border-t-transparent"></div>
+            <p className="text-lg font-medium text-gray-800">Loading products...</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

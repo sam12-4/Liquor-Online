@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { adminLogin, isAdminLoggedIn, requestAdminPasswordReset } from '../../utils/auth';
+import { useDispatch } from 'react-redux';
+import { loadUser } from '../../actions/authActions';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
-    identifier: '', // This can be either email or username
+    email: '',
     password: '',
     rememberMe: false
   });
@@ -17,7 +20,7 @@ const AdminLogin = () => {
   // Check if already logged in
   useEffect(() => {
     if (isAdminLoggedIn()) {
-      navigate('/admin');
+      navigate('/admin/dashboard');
     }
   }, [navigate]);
 
@@ -37,7 +40,7 @@ const AdminLogin = () => {
     try {
       // If in forgot password mode
       if (forgotPassword) {
-        const result = await requestAdminPasswordReset(formData.identifier);
+        const result = await requestAdminPasswordReset(formData.email);
         
         if (result.success) {
           setResetSuccess(result.message);
@@ -46,18 +49,19 @@ const AdminLogin = () => {
         }
       } else {
         // Regular login
-        const credentials = {
-          // Determine if input is email or username
-          ...(formData.identifier.includes('@') 
-            ? { email: formData.identifier } 
-            : { username: formData.identifier }),
+        const result = await adminLogin({
+          email: formData.email,
           password: formData.password
-        };
-        
-        const result = await adminLogin(credentials, formData.rememberMe);
+        }, formData.rememberMe);
         
         if (result.success) {
-          navigate('/admin');
+          console.log('Admin login successful! Token:', result.token ? result.token.substring(0, 20) + '...' : 'No token');
+          
+          // Force Redux to reload user data with the new token
+          dispatch(loadUser());
+          
+          // Navigate to admin dashboard
+          navigate('/admin/dashboard');
         } else {
           setError(result.error);
         }
@@ -83,11 +87,6 @@ const AdminLogin = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             {forgotPassword ? 'Reset Admin Password' : 'Admin Login'}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            {forgotPassword 
-              ? 'Enter your email or username to receive a reset link' 
-              : 'Enter your credentials to access the admin dashboard'}
-          </p>
         </div>
         
         {error && (
@@ -123,18 +122,16 @@ const AdminLogin = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="identifier" className="sr-only">
-                {forgotPassword ? 'Email or Username' : 'Email or Username'}
-              </label>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
-                id="identifier"
-                name="identifier"
-                type="text"
-                autoComplete={forgotPassword ? "email" : "username"}
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                placeholder={forgotPassword ? "Email or Username" : "Email or Username"}
-                value={formData.identifier}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={formData.email}
                 onChange={handleChange}
               />
             </div>
@@ -148,7 +145,7 @@ const AdminLogin = () => {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleChange}
@@ -156,7 +153,7 @@ const AdminLogin = () => {
               </div>
             )}
           </div>
-
+          
           {!forgotPassword && (
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -164,7 +161,7 @@ const AdminLogin = () => {
                   id="rememberMe"
                   name="rememberMe"
                   type="checkbox"
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   checked={formData.rememberMe}
                   onChange={handleChange}
                 />
@@ -172,24 +169,24 @@ const AdminLogin = () => {
                   Remember me
                 </label>
               </div>
-
+              
               <div className="text-sm">
                 <button
                   type="button"
-                  className="font-medium text-primary hover:text-primary-dark"
+                  className="font-medium text-indigo-600 hover:text-indigo-500"
                   onClick={toggleForgotPassword}
                 >
-                  Forgot your password?
+                  Forgot password?
                 </button>
               </div>
             </div>
           )}
-
+          
           <div>
             <button
               type="submit"
               disabled={loading}
-              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {loading ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -197,7 +194,7 @@ const AdminLogin = () => {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               ) : null}
-              {forgotPassword ? 'Send Reset Link' : 'Sign in'}
+              {forgotPassword ? 'Reset Password' : 'Sign in'}
             </button>
           </div>
           
@@ -205,7 +202,7 @@ const AdminLogin = () => {
             <div className="text-center">
               <button
                 type="button"
-                className="font-medium text-primary hover:text-primary-dark"
+                className="font-medium text-indigo-600 hover:text-indigo-500"
                 onClick={toggleForgotPassword}
               >
                 Back to login
@@ -215,9 +212,11 @@ const AdminLogin = () => {
         </form>
         
         <div className="text-center mt-4">
-          <Link to="/" className="font-medium text-primary hover:text-primary-dark">
-            &larr; Back to Store
-          </Link>
+          <p className="text-sm text-gray-600">
+            For testing, use: <span className="font-medium">admin@example.com / admin123</span>
+            <br/>
+            Or: <span className="font-medium">test@example.com / Test123!</span>
+          </p>
         </div>
       </div>
     </div>

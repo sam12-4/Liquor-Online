@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUser, isUserLoggedIn, updateUserContactMethods } from '../utils/auth';
+import { getUser, updateUserContactMethods } from '../utils/auth';
 
 const AccountSettings = () => {
   const navigate = useNavigate();
@@ -15,11 +15,6 @@ const AccountSettings = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    if (!isUserLoggedIn()) {
-      navigate('/login');
-      return;
-    }
-
     const userData = getUser();
     setUser(userData);
     setFormData({
@@ -27,7 +22,7 @@ const AccountSettings = () => {
       phoneNumber: userData?.phoneNumber || ''
     });
     setLoading(false);
-  }, [navigate]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -187,10 +182,10 @@ const AccountSettings = () => {
             <div className="mt-4">
               <button
                 type="button"
-                onClick={() => navigate('/reset-password')}
+                onClick={() => navigate('/account')}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
-                Change Password
+                Back to Account
               </button>
             </div>
           </div>

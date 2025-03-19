@@ -1,5 +1,4 @@
 import { combineReducers } from 'redux';
-import auth from './authReducer';
 import alert from './alertReducer';
 // Import other reducers here when they're created
 // import product from './productReducer';
@@ -8,7 +7,6 @@ import alert from './alertReducer';
 // import order from './orderReducer';
 
 export default combineReducers({
-  auth,
   alert
   // Add other reducers here when they're created
   // product,

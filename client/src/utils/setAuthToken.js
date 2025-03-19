@@ -1,12 +1,7 @@
-import axios from 'axios';
+// This file has been emptied as requested
+// Authentication token functionality removed
 
-// Set or remove the auth token in axios headers
-export const setAuthToken = token => {
-  if (token) {
-    // If token exists, set it as the default header
-    axios.defaults.headers.common['x-auth-token'] = token;
-  } else {
-    // If no token, remove the header
-    delete axios.defaults.headers.common['x-auth-token'];
-  }
+export const setAuthToken = () => {
+  // Function intentionally emptied
+  return;
 }; 

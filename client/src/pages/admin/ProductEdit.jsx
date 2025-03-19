@@ -1,540 +1,679 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { formatPrice } from '../../utils/formatters';
-import axios from 'axios';
-
-// API base URL
-const API_URL = 'http://localhost:5000/api';
+import ProductImageUploader from '../../components/admin/ProductImageUploader';
+import categoryService from '../../services/categoryService';
+import brandService from '../../services/brandService';
+import typeService from '../../services/typeService';
+import countryService from '../../services/countryService';
+import productService from '../../services/productService';
 
 /**
- * ProductEdit component for adding or editing products
- * Handles both creation of new products and editing existing ones
+ * ProductEdit component for creating and editing products
  */
 const ProductEdit = () => {
-  const { productId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const isNewProduct = productId === 'new';
+  const isEditMode = !!id;
   
-  // State for form data
+  // Form state
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
     shortDescription: '',
-    price: 0,
-    salePrice: 0,
+    price: '',
+    salePrice: '',
     onSale: false,
     sku: '',
-    stock: 0,
-    images: [{ url: '', alt: '', isPrimary: true }],
+    stock: '',
+    images: [],
     isActive: true,
     isHot: false,
     isFeatured: false,
     attributes: {},
-    categoryIds: [],
     brandId: '',
+    categoryIds: [],
     typeIds: [],
     countryId: ''
   });
   
-  // State for taxonomy data
+  // Additional state
   const [categories, setCategories] = useState([]);
-  const [types, setTypes] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [types, setTypes] = useState([]);
+  const [filteredTypes, setFilteredTypes] = useState([]);
   const [countries, setCountries] = useState([]);
-  
-  // State for loading and errors
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [validationErrors, setValidationErrors] = useState({});
   
-  // Fetch data on component mount
+  // Load data
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      setLoading(true);
       setError(null);
       
       try {
-        // Fetch categories, types, brands, and countries
-        const [categoriesRes, typesRes, brandsRes] = await Promise.all([
-          axios.get(`${API_URL}/categories`),
-          axios.get(`${API_URL}/types`),
-          axios.get(`${API_URL}/brands`)
+        // Fetch taxonomy data
+        const [categoriesData, brandsData, typesData, countriesData] = await Promise.all([
+          categoryService.getAllCategories(),
+          brandService.getAllBrands(),
+          typeService.getAllTypes(),
+          countryService.getAllCountries()
         ]);
         
-        // Set taxonomy data
-        setCategories(categoriesRes.data.data || []);
-        setTypes(typesRes.data.data || []);
-        setBrands(brandsRes.data.data || []);
-        setCountries([]); // No countries endpoint yet
+        setCategories(categoriesData);
+        setBrands(brandsData);
+        setTypes(typesData);
+        setCountries(countriesData);
         
-        // If editing an existing product, fetch its data
-        if (!isNewProduct) {
-          const productRes = await axios.get(`${API_URL}/products/${productId}`);
-          if (productRes.data && productRes.data.data) {
-            setFormData(productRes.data.data);
-          } else {
-            setError('Product not found');
-          }
+        // If edit mode, fetch product
+        if (isEditMode) {
+          const productData = await productService.getProductById(id);
+          
+          // Normalize data
+          setFormData({
+            ...productData,
+            price: productData.price.toString(),
+            salePrice: productData.salePrice?.toString() || '',
+            stock: productData.stock?.toString() || '',
+            // Ensure arrays
+            categoryIds: Array.isArray(productData.categoryIds) ? productData.categoryIds : [],
+            typeIds: Array.isArray(productData.typeIds) ? productData.typeIds : [],
+            // Initialize attributes if missing
+            attributes: productData.attributes || {}
+          });
         }
         
-        setIsLoading(false);
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load data. Please try again.');
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
     fetchData();
-  }, [productId, isNewProduct]);
-
-  // Handle form input changes
-  const handleChange = (e) => {
+  }, [id, isEditMode]);
+  
+  // Handle input changes
+  const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    if (name.includes('.')) {
-      // Handle nested properties (attributes)
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: type === 'number' ? parseFloat(value) : value
-        }
-      }));
-    } else if (type === 'checkbox') {
-      setFormData(prev => ({ ...prev, [name]: checked }));
-    } else if (type === 'number') {
-      setFormData(prev => ({ ...prev, [name]: parseFloat(value) }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
-
-  // Handle select changes for multi-select fields (categories, types)
-  const handleMultiSelectChange = (e) => {
+  
+  // Handle select multiple changes (categories, types)
+  const handleSelectMultiple = (e) => {
     const { name, options } = e.target;
     const selectedValues = Array.from(options)
       .filter(option => option.selected)
       .map(option => option.value);
     
-    setFormData(prev => ({ ...prev, [name]: selectedValues }));
-  };
-
-  // Handle image URL changes
-  const handleImageChange = (index, value) => {
-    const updatedImages = [...formData.images];
-    updatedImages[index] = value;
-    setFormData(prev => ({ ...prev, images: updatedImages }));
-  };
-
-  // Add a new image input field
-  const addImageField = () => {
-    setFormData(prev => ({ 
-      ...prev, 
-      images: [...prev.images, { url: '', alt: '', isPrimary: false }],
+    setFormData(prev => ({
+      ...prev,
+      [name]: selectedValues
     }));
   };
-
-  // Remove an image input field
-  const removeImageField = (index) => {
-    if (formData.images.length > 1) {
-      const updatedImages = formData.images.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, images: updatedImages }));
+  
+  // Handle attribute changes
+  const handleAttributeChange = (key, value) => {
+    setFormData(prev => ({
+      ...prev,
+      attributes: {
+        ...prev.attributes,
+        [key]: value
+      }
+    }));
+  };
+  
+  // Handle attribute deletion
+  const handleDeleteAttribute = (key) => {
+    setFormData(prev => {
+      const updatedAttributes = { ...prev.attributes };
+      delete updatedAttributes[key];
+      return {
+        ...prev,
+        attributes: updatedAttributes
+      };
+    });
+  };
+  
+  // Handle image changes
+  const handleImagesChange = (images) => {
+    setFormData(prev => ({
+      ...prev,
+      images
+    }));
+  };
+  
+  // Generate slug from name
+  const generateSlug = () => {
+    const slug = formData.name
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    setFormData(prev => ({
+      ...prev,
+      slug
+    }));
+  };
+  
+  // Filter types based on selected categories
+  useEffect(() => {
+    if (formData.categoryIds.length > 0 && types.length > 0) {
+      // Filter types that belong to any of the selected categories
+      const filtered = types.filter(type => {
+        // Check if any of the type's categories match the selected categories
+        return type.categoryIds && type.categoryIds.some(catId => 
+          formData.categoryIds.includes(catId) ||
+          formData.categoryIds.includes(catId.toString())
+        );
+      });
+      
+      setFilteredTypes(filtered);
+      
+      // Remove any selected types that are no longer valid
+      const validTypeIds = filtered.map(t => t.id || t._id);
+      const updatedTypeIds = formData.typeIds.filter(id => 
+        validTypeIds.includes(id) || validTypeIds.includes(id.toString())
+      );
+      
+      if (JSON.stringify(updatedTypeIds) !== JSON.stringify(formData.typeIds)) {
+        setFormData(prev => ({
+          ...prev,
+          typeIds: updatedTypeIds
+        }));
+      }
+    } else {
+      // If no categories selected, show all types
+      setFilteredTypes(types);
     }
-  };
-
-  // Validate the form
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (formData.price <= 0) newErrors.price = 'Price must be greater than 0';
-    if (formData.stock < 0) newErrors.stock = 'Stock cannot be negative';
-    if (!formData.sku.trim()) newErrors.sku = 'SKU is required';
-    if (formData.categoryIds.length === 0) newErrors.categoryIds = 'At least one category is required';
-    if (!formData.brandId) newErrors.brandId = 'Brand is required';
-    
-    setValidationErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
+  }, [formData.categoryIds, types]);
+  
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (saving) return;
     
-    setIsLoading(true);
+    setSaving(true);
+    setError(null);
     
     try {
-      // In a real app, this would be an API call to create/update a product
-      // For now, just simulate an API call with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create product object
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price) || 0,
+        salePrice: parseFloat(formData.salePrice) || 0,
+        stock: parseInt(formData.stock, 10) || 0
+      };
       
-      setError('Product saved successfully!');
+      // Save product
+      let savedProduct;
+      if (isEditMode && id) {
+        savedProduct = await productService.saveProduct({
+          ...productData,
+          id
+        });
+      } else {
+        savedProduct = await productService.saveProduct(productData);
+      }
       
-      // Redirect to products list after a brief delay
-      setTimeout(() => {
-        navigate('/admin/products');
-      }, 2000);
-    } catch (error) {
-      setError('Failed to save product. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.log('Product saved successfully:', savedProduct);
+      
+      // Redirect to products list
+      navigate('/admin/products');
+    } catch (err) {
+      console.error('Error saving product:', err);
+      setError('Failed to save product. Please check your data and try again.');
+      setSaving(false);
     }
   };
-
-  if (isLoading) {
+  
+  if (loading) {
     return (
-      <div className="p-6">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
-          <p>Loading product data...</p>
-        </div>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">
-          {isNewProduct ? 'Add New Product' : 'Edit Product'}
+    <div className="container mx-auto p-4">
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <h1 className="text-2xl font-bold mb-6">
+          {isEditMode ? 'Edit Product' : 'Create New Product'}
         </h1>
-        <button
-          onClick={() => navigate('/admin/products')}
-          className="btn-outline py-2 px-4"
-        >
-          Cancel
-        </button>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Information */}
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Name */}
-            <div>
-              <label className="block mb-1">
-                Product Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded ${validationErrors.name ? 'border-red-500' : 'border-gray-300'}`}
-              />
-              {validationErrors.name && <p className="text-red-500 text-sm mt-1">{validationErrors.name}</p>}
+        
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          {/* Basic Information */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Product Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product Name*
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  onBlur={() => !formData.slug && generateSlug()}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+              
+              {/* Product Slug */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Slug*
+                </label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    name="slug"
+                    value={formData.slug}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full p-2 border border-gray-300 rounded-l"
+                  />
+                  <button
+                    type="button"
+                    onClick={generateSlug}
+                    className="bg-gray-200 px-4 rounded-r border border-gray-300 border-l-0"
+                  >
+                    Generate
+                  </button>
+                </div>
+              </div>
+              
+              {/* SKU */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  SKU*
+                </label>
+                <input
+                  type="text"
+                  name="sku"
+                  value={formData.sku}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+              
+              {/* Stock */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Stock
+                </label>
+                <input
+                  type="number"
+                  name="stock"
+                  value={formData.stock}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
             </div>
             
-            {/* SKU */}
-            <div>
-              <label className="block mb-1">
-                SKU <span className="text-red-500">*</span>
+            {/* Description */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description*
               </label>
-              <input
-                type="text"
-                name="sku"
-                value={formData.sku}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded ${validationErrors.sku ? 'border-red-500' : 'border-gray-300'}`}
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                required
+                rows={5}
+                className="w-full p-2 border border-gray-300 rounded"
               />
-              {validationErrors.sku && <p className="text-red-500 text-sm mt-1">{validationErrors.sku}</p>}
             </div>
             
-            {/* Price */}
-            <div>
-              <label className="block mb-1">
-                Price <span className="text-red-500">*</span>
+            {/* Short Description */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Short Description
               </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                className={`w-full p-2 border rounded ${validationErrors.price ? 'border-red-500' : 'border-gray-300'}`}
+              <textarea
+                name="shortDescription"
+                value={formData.shortDescription}
+                onChange={handleInputChange}
+                rows={2}
+                className="w-full p-2 border border-gray-300 rounded"
               />
-              {validationErrors.price && <p className="text-red-500 text-sm mt-1">{validationErrors.price}</p>}
-            </div>
-            
-            {/* Stock */}
-            <div>
-              <label className="block mb-1">
-                Stock Quantity <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                min="0"
-                className={`w-full p-2 border rounded ${validationErrors.stock ? 'border-red-500' : 'border-gray-300'}`}
-              />
-              {validationErrors.stock && <p className="text-red-500 text-sm mt-1">{validationErrors.stock}</p>}
             </div>
           </div>
           
-          {/* Description */}
-          <div className="mt-4">
-            <label className="block mb-1">
-              Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              className={`w-full p-2 border rounded ${validationErrors.description ? 'border-red-500' : 'border-gray-300'}`}
-            ></textarea>
-            {validationErrors.description && <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>}
+          {/* Pricing */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Pricing</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Regular Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Regular Price*
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 pl-7 border border-gray-300 rounded"
+                  />
+                </div>
+              </div>
+              
+              {/* Sale Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sale Price
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    name="salePrice"
+                    value={formData.salePrice}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full p-2 pl-7 border border-gray-300 rounded"
+                  />
+                </div>
+              </div>
+              
+              {/* On Sale */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="onSale"
+                  id="onSale"
+                  checked={formData.onSale}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <label htmlFor="onSale" className="ml-2 text-sm text-gray-700">
+                  Product is on sale
+                </label>
+              </div>
+            </div>
           </div>
           
-          {/* Status Toggles */}
-          <div className="mt-4 flex space-x-6">
-            <div>
-              <label className="flex items-center">
+          {/* Images */}
+          <div className="mb-8">
+            <ProductImageUploader 
+              images={formData.images} 
+              onChange={handleImagesChange} 
+            />
+          </div>
+          
+          {/* Categories and Brands */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Classification</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Brand */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Brand
+                </label>
+                <select
+                  name="brandId"
+                  value={formData.brandId}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  <option value="">Select a brand</option>
+                  {brands.map(brand => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Categories */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Categories*
+                </label>
+                <select
+                  name="categoryIds"
+                  multiple
+                  value={formData.categoryIds}
+                  onChange={handleSelectMultiple}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded h-32"
+                >
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Hold Ctrl (or Cmd) to select multiple categories
+                </p>
+              </div>
+              
+              {/* Types */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Types
+                </label>
+                <select
+                  name="typeIds"
+                  multiple
+                  value={formData.typeIds}
+                  onChange={handleSelectMultiple}
+                  className="w-full p-2 border border-gray-300 rounded h-32"
+                >
+                  {filteredTypes.map(type => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Hold Ctrl (or Cmd) to select multiple types
+                </p>
+              </div>
+              
+              {/* Country */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country of Origin
+                </label>
+                <select
+                  name="countryId"
+                  value={formData.countryId}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  <option value="">Select a country</option>
+                  {countries.map(country => (
+                    <option key={country.id} value={country.id}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          {/* Attributes */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Attributes</h2>
+            
+            {/* Attribute List */}
+            <div className="mb-4">
+              {Object.entries(formData.attributes).map(([key, value]) => (
+                <div key={key} className="flex items-center mb-2">
+                  <input
+                    type="text"
+                    value={key}
+                    disabled
+                    className="w-1/3 p-2 border border-gray-300 rounded-l bg-gray-100"
+                  />
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => handleAttributeChange(key, e.target.value)}
+                    className="w-2/3 p-2 border border-gray-300 border-l-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteAttribute(key)}
+                    className="bg-red-600 text-white p-2 rounded-r"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            {/* Add Attribute */}
+            <div className="flex items-center">
+              <input
+                type="text"
+                id="attrKey"
+                placeholder="Attribute name"
+                className="w-1/3 p-2 border border-gray-300 rounded-l"
+              />
+              <input
+                type="text"
+                id="attrValue"
+                placeholder="Attribute value"
+                className="w-2/3 p-2 border border-gray-300 border-l-0"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const key = document.getElementById('attrKey').value.trim();
+                  const value = document.getElementById('attrValue').value.trim();
+                  
+                  if (key && value) {
+                    handleAttributeChange(key, value);
+                    document.getElementById('attrKey').value = '';
+                    document.getElementById('attrValue').value = '';
+                  }
+                }}
+                className="bg-blue-600 text-white p-2 rounded-r"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          {/* Product Options */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Product Options</h2>
+            
+            <div className="flex flex-wrap gap-6">
+              {/* Is Active */}
+              <div className="flex items-center">
                 <input
                   type="checkbox"
                   name="isActive"
+                  id="isActive"
                   checked={formData.isActive}
-                  onChange={handleChange}
-                  className="mr-2"
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                 />
-                Active (Available for Purchase)
-              </label>
-            </div>
-            
-            <div>
-              <label className="flex items-center">
+                <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
+                  Product is active
+                </label>
+              </div>
+              
+              {/* Is Featured */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isFeatured"
+                  id="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <label htmlFor="isFeatured" className="ml-2 text-sm text-gray-700">
+                  Featured product
+                </label>
+              </div>
+              
+              {/* Is Hot */}
+              <div className="flex items-center">
                 <input
                   type="checkbox"
                   name="isHot"
+                  id="isHot"
                   checked={formData.isHot}
-                  onChange={handleChange}
-                  className="mr-2"
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                 />
-                Hot Product (Highlighted)
-              </label>
+                <label htmlFor="isHot" className="ml-2 text-sm text-gray-700">
+                  Hot/New product
+                </label>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Categories, Types and Brand */}
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Categories & Classifications</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Categories */}
-            <div>
-              <label className="block mb-1">
-                Categories <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="categoryIds"
-                multiple
-                value={formData.categoryIds}
-                onChange={handleMultiSelectChange}
-                className={`w-full p-2 border rounded h-32 ${validationErrors.categoryIds ? 'border-red-500' : 'border-gray-300'}`}
-              >
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
-              {validationErrors.categoryIds && <p className="text-red-500 text-sm mt-1">{validationErrors.categoryIds}</p>}
-            </div>
-            
-            {/* Types */}
-            <div>
-              <label className="block mb-1">
-                Types
-              </label>
-              <select
-                name="typeIds"
-                multiple
-                value={formData.typeIds}
-                onChange={handleMultiSelectChange}
-                className="w-full p-2 border border-gray-300 rounded h-32"
-              >
-                {types.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
-            </div>
-            
-            {/* Brand */}
-            <div>
-              <label className="block mb-1">
-                Brand <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="brandId"
-                value={formData.brandId}
-                onChange={handleChange}
-                className={`w-full p-2 border rounded ${validationErrors.brandId ? 'border-red-500' : 'border-gray-300'}`}
-              >
-                <option value="">Select Brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-              {validationErrors.brandId && <p className="text-red-500 text-sm mt-1">{validationErrors.brandId}</p>}
-            </div>
-            
-            {/* Country */}
-            <div>
-              <label className="block mb-1">
-                Country of Origin
-              </label>
-              <select
-                name="countryId"
-                value={formData.countryId}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded"
-              >
-                <option value="">Select Country</option>
-                {countries.map((country) => (
-                  <option key={country.id} value={country.id}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Form Actions */}
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/admin/products')}
+              className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className={`px-4 py-2 rounded ${
+                saving
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {saving ? 'Saving...' : isEditMode ? 'Update Product' : 'Create Product'}
+            </button>
           </div>
-        </div>
-        
-        {/* Attributes */}
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Product Attributes</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Alcohol Percentage */}
-            <div>
-              <label className="block mb-1">
-                Alcohol Percentage (%)
-              </label>
-              <input
-                type="number"
-                name="attributes.alcohol_percentage"
-                value={formData.attributes.alcohol_percentage}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                step="0.1"
-                className="w-full p-2 border border-gray-300 rounded"
-              />
-            </div>
-            
-            {/* Volume */}
-            <div>
-              <label className="block mb-1">
-                Volume (ml)
-              </label>
-              <input
-                type="number"
-                name="attributes.volume_ml"
-                value={formData.attributes.volume_ml}
-                onChange={handleChange}
-                min="0"
-                className="w-full p-2 border border-gray-300 rounded"
-              />
-            </div>
-            
-            {/* Year */}
-            <div>
-              <label className="block mb-1">
-                Year (for wine/vintage)
-              </label>
-              <input
-                type="number"
-                name="attributes.year"
-                value={formData.attributes.year}
-                onChange={handleChange}
-                min="1900"
-                max={new Date().getFullYear()}
-                className="w-full p-2 border border-gray-300 rounded"
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Images */}
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Product Images</h2>
-          
-          {formData.images.map((image, index) => (
-            <div key={index} className="flex items-center mb-3">
-              <input
-                type="text"
-                value={image.url}
-                onChange={(e) => handleImageChange(index, { ...image, url: e.target.value })}
-                placeholder="Image URL"
-                className="flex-1 p-2 border border-gray-300 rounded mr-2"
-              />
-              
-              <button
-                type="button"
-                onClick={() => removeImageField(index)}
-                disabled={formData.images.length <= 1}
-                className={`p-2 ${
-                  formData.images.length <= 1
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-red-500 text-white hover:bg-red-600'
-                } rounded`}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          
-          <button
-            type="button"
-            onClick={addImageField}
-            className="mt-2 bg-gray-200 text-gray-700 py-2 px-4 rounded hover:bg-gray-300"
-          >
-            Add Image URL
-          </button>
-        </div>
-        
-        {/* Form Actions */}
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate('/admin/products')}
-            className="btn-outline py-2 px-6"
-          >
-            Cancel
-          </button>
-          
-          <button
-            type="submit"
-            className="btn-primary py-2 px-6"
-          >
-            Save Product
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

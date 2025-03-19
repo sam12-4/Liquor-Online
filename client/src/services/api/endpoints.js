@@ -29,6 +29,14 @@ export const ENDPOINTS = {
   LOGOUT: '/auth/logout',
   CURRENT_USER: '/auth/me',
   
+  // User management endpoints
+  USERS: '/users',
+  USER_BY_ID: (id) => `/users/${id}`,
+  
+  // Upload endpoints
+  UPLOAD_IMAGE: '/uploads/image',
+  DELETE_IMAGE: '/uploads/image',
+  
   // Shopping cart endpoints
   CART: '/cart',
   ADD_TO_CART: '/cart/add',

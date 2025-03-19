@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1, h2, h3 {
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="email"], 
+    input[type="password"],
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .checkbox-group input {
+      width: auto;
+      margin: 0;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button.delete {
+      background-color: #f44336;
+    }
+    button.delete:hover {
+      background-color: #d32f2f;
+    }
+    button.update {
+      background-color: #2196F3;
+    }
+    button.update:hover {
+      background-color: #0b7dda;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .endpoint-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .endpoint-buttons button {
+      background-color: #2196F3;
+    }
+    .endpoint-buttons button:hover {
+      background-color: #0b7dda;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background: #f1f1f1;
+      margin-right: 5px;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab.active {
+      background: #4CAF50;
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f5f5f5;
+    }
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin API Test</h1>
+  
+  <div id="login-section">
+    <h2>Admin Login</h2>
+    <div class="card">
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" value="admin@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" value="admin123" required>
+        </div>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+  
+  <div id="admin-section" style="display: none; margin-top: 20px;">
+    <h2>Admin Dashboard</h2>
+    <button id="logout-btn" class="delete" style="margin-bottom: 20px;">Logout</button>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="dashboard">Dashboard</div>
+      <div class="tab" data-tab="products">Products</div>
+      <div class="tab" data-tab="categories">Categories</div>
+      <div class="tab" data-tab="brands">Brands</div>
+      <div class="tab" data-tab="types">Types</div>
+      <div class="tab" data-tab="countries">Countries</div>
+      <div class="tab" data-tab="orders">Orders</div>
+      <div class="tab" data-tab="users">Users</div>
+    </div>
+    
+    <!-- Dashboard Tab -->
+    <div id="dashboard-tab" class="tab-content active">
+      <h3>Admin Token</h3>
+      <pre id="token-display"></pre>
+      
+      <h3>API Overview</h3>
+      <div class="endpoint-buttons">
+        <button id="get-products">Get All Products</button>
+        <button id="get-categories">Get All Categories</button>
+        <button id="get-brands">Get All Brands</button>
+        <button id="get-types">Get All Types</button>
+        <button id="get-countries">Get All Countries</button>
+        <button id="get-orders">Get All Orders</button>
+        <button id="get-users">Get All Users</button>
+      </div>
+      
+      <h3>Response</h3>
+      <pre id="response-display"></pre>
+    </div>
+    
+    <!-- Products Tab -->
+    <div id="products-tab" class="tab-content">
+      <h3>Manage Products</h3>
+      <div class="card">
+        <h4>Create New Product</h4>
+        <form id="create-product-form">
+          <div class="form-group">
+            <label for="product-name">Name:</label>
+            <input type="text" id="product-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="product-description">Description:</label>
+            <textarea id="product-description" name="description" rows="3" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="product-price">Price ($):</label>
+            <input type="number" id="product-price" name="price" step="0.01" min="0" required>
+          </div>
+          <div class="form-group">
+            <label for="product-sale-price">Sale Price ($):</label>
+            <input type="number" id="product-sale-price" name="salePrice" step="0.01" min="0">
+          </div>
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="product-on-sale" name="onSale">
+            <label for="product-on-sale">On Sale</label>
+          </div>
+          <div class="form-group">
+            <label for="product-stock">Stock:</label>
+            <input type="number" id="product-stock" name="stock" min="0" required>
+          </div>
+          <div class="form-group">
+            <label for="product-category">Category:</label>
+            <select id="product-category" name="categoryId" required>
+              <option value="">Select Category</option>
+              <!-- Will be populated from API -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="product-brand">Brand:</label>
+            <select id="product-brand" name="brandId" required>
+              <option value="">Select Brand</option>
+              <!-- Will be populated from API -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="product-type">Type:</label>
+            <select id="product-type" name="typeId" required>
+              <option value="">Select Type</option>
+              <!-- Will be populated from API -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="product-country">Country:</label>
+            <select id="product-country" name="countryId" required>
+              <option value="">Select Country</option>
+              <!-- Will be populated from API -->
+            </select>
+          </div>
+          <button type="submit">Create Product</button>
+        </form>
+      </div>
+      
+      <div class="card">
+        <h4>Products List</h4>
+        <button id="refresh-products">Refresh List</button>
+        <div id="products-list">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>On Sale</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Will be populated from API -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="card" id="edit-product-card" style="display: none;">
+        <h4>Edit Product</h4>
+        <form id="edit-product-form">
+          <input type="hidden" id="edit-product-id">
+          <div class="form-group">
+            <label for="edit-product-name">Name:</label>
+            <input type="text" id="edit-product-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-description">Description:</label>
+            <textarea id="edit-product-description" name="description" rows="3" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-price">Price ($):</label>
+            <input type="number" id="edit-product-price" name="price" step="0.01" min="0" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-sale-price">Sale Price ($):</label>
+            <input type="number" id="edit-product-sale-price" name="salePrice" step="0.01" min="0">
+          </div>
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="edit-product-on-sale" name="onSale">
+            <label for="edit-product-on-sale">On Sale</label>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-stock">Stock:</label>
+            <input type="number" id="edit-product-stock" name="stock" min="0" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-category">Category:</label>
+            <select id="edit-product-category" name="categoryId" required>
+              <option value="">Select Category</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-brand">Brand:</label>
+            <select id="edit-product-brand" name="brandId" required>
+              <option value="">Select Brand</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-type">Type:</label>
+            <select id="edit-product-type" name="typeId" required>
+              <option value="">Select Type</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-product-country">Country:</label>
+            <select id="edit-product-country" name="countryId" required>
+              <option value="">Select Country</option>
+            </select>
+          </div>
+          <button type="submit" class="update">Update Product</button>
+          <button type="button" id="cancel-edit-product" class="delete">Cancel</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Categories Tab -->
+    <div id="categories-tab" class="tab-content">
+      <h3>Manage Categories</h3>
+      <div class="card">
+        <h4>Create New Category</h4>
+        <form id="create-category-form">
+          <div class="form-group">
+            <label for="category-name">Name:</label>
+            <input type="text" id="category-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="category-description">Description:</label>
+            <textarea id="category-description" name="description" rows="3"></textarea>
+          </div>
+          <button type="submit">Create Category</button>
+        </form>
+      </div>
+      
+      <div class="card">
+        <h4>Categories List</h4>
+        <button id="refresh-categories">Refresh List</button>
+        <div id="categories-list">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Will be populated from API -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Brands Tab -->
+    <div id="brands-tab" class="tab-content">
+      <h3>Manage Brands</h3>
+      <div class="card">
+        <h4>Create New Brand</h4>
+        <form id="create-brand-form">
+          <div class="form-group">
+            <label for="brand-name">Name:</label>
+            <input type="text" id="brand-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="brand-description">Description:</label>
+            <textarea id="brand-description" name="description" rows="3"></textarea>
+          </div>
+          <button type="submit">Create Brand</button>
+        </form>
+      </div>
+      
+      <div class="card">
+        <h4>Brands List</h4>
+        <button id="refresh-brands">Refresh List</button>
+        <div id="brands-list">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Will be populated from API -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Other tabs structure would be similar -->
+  </div>
+  
+  <script>
+    let token = '';
+    const apiBaseUrl = 'http://localhost:5001/api';
+    
+    // Login Form Handler
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch(`${apiBaseUrl}/auth/admin/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          token = data.token;
+          document.getElementById('token-display').textContent = token;
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('admin-section').style.display = 'block';
+          
+          // Load data for dropdowns
+          loadCategories();
+          loadBrands();
+          loadTypes();
+          loadCountries();
+          loadProducts();
+        } else {
+          alert('Login failed: ' + (data.message || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Login error: ' + error.message);
+      }
+    });
+    
+    // Logout handler
+    document.getElementById('logout-btn').addEventListener('click', function() {
+      token = '';
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('admin-section').style.display = 'none';
+    });
+    
+    // Tab functionality
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        this.classList.add('active');
+        document.getElementById(`${this.dataset.tab}-tab`).classList.add('active');
+      });
+    });
+    
+    // API fetch helper
+    async function fetchApi(endpoint, method = 'GET', body = null) {
+      try {
+        const options = {
+          method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        };
+        
+        if (body) {
+          options.body = JSON.stringify(body);
+        }
+        
+        const response = await fetch(`${apiBaseUrl}/${endpoint}`, options);
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('API Error:', error);
+        return { success: false, message: error.message };
+      }
+    }
+    
+    // Load data functions
+    async function loadCategories() {
+      const data = await fetchApi('categories');
+      
+      if (data.success) {
+        const categorySelects = document.querySelectorAll('[id$="product-category"]');
+        categorySelects.forEach(select => {
+          select.innerHTML = '<option value="">Select Category</option>';
+          data.data.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category._id;
+            option.textContent = category.name;
+            select.appendChild(option);
+          });
+        });
+        
+        // Populate categories table
+        const tbody = document.querySelector('#categories-list tbody');
+        tbody.innerHTML = '';
+        
+        data.data.forEach(category => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${category.name}</td>
+            <td>${category.description || '-'}</td>
+            <td class="action-buttons">
+              <button class="update" data-id="${category._id}">Edit</button>
+              <button class="delete" data-id="${category._id}">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+    
+    async function loadBrands() {
+      const data = await fetchApi('brands');
+      
+      if (data.success) {
+        const brandSelects = document.querySelectorAll('[id$="product-brand"]');
+        brandSelects.forEach(select => {
+          select.innerHTML = '<option value="">Select Brand</option>';
+          data.data.forEach(brand => {
+            const option = document.createElement('option');
+            option.value = brand._id;
+            option.textContent = brand.name;
+            select.appendChild(option);
+          });
+        });
+        
+        // Populate brands table
+        const tbody = document.querySelector('#brands-list tbody');
+        tbody.innerHTML = '';
+        
+        data.data.forEach(brand => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${brand.name}</td>
+            <td>${brand.description || '-'}</td>
+            <td class="action-buttons">
+              <button class="update" data-id="${brand._id}">Edit</button>
+              <button class="delete" data-id="${brand._id}">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+    
+    async function loadTypes() {
+      const data = await fetchApi('types');
+      
+      if (data.success) {
+        const typeSelects = document.querySelectorAll('[id$="product-type"]');
+        typeSelects.forEach(select => {
+          select.innerHTML = '<option value="">Select Type</option>';
+          data.data.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type._id;
+            option.textContent = type.name;
+            select.appendChild(option);
+          });
+        });
+      }
+    }
+    
+    async function loadCountries() {
+      const data = await fetchApi('countries');
+      
+      if (data.success) {
+        const countrySelects = document.querySelectorAll('[id$="product-country"]');
+        countrySelects.forEach(select => {
+          select.innerHTML = '<option value="">Select Country</option>';
+          data.data.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country._id;
+            option.textContent = country.name;
+            select.appendChild(option);
+          });
+        });
+      }
+    }
+    
+    async function loadProducts() {
+      const data = await fetchApi('products/admin');
+      
+      if (data.success) {
+        // Populate products table
+        const tbody = document.querySelector('#products-list tbody');
+        tbody.innerHTML = '';
+        
+        data.data.forEach(product => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${product.name}</td>
+            <td>$${product.price.toFixed(2)}${product.onSale ? ` <span style="color:red;">$${product.salePrice.toFixed(2)}</span>` : ''}</td>
+            <td>${product.stock}</td>
+            <td>${product.onSale ? 'Yes' : 'No'}</td>
+            <td class="action-buttons">
+              <button class="update" data-id="${product._id}">Edit</button>
+              <button class="delete" data-id="${product._id}">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        
+        // Add event listeners for edit and delete buttons
+        document.querySelectorAll('#products-list button.update').forEach(button => {
+          button.addEventListener('click', async () => {
+            const productId = button.dataset.id;
+            const product = await fetchApi(`products/${productId}`);
+            
+            if (product.success) {
+              // Populate edit form
+              document.getElementById('edit-product-id').value = product.data._id;
+              document.getElementById('edit-product-name').value = product.data.name;
+              document.getElementById('edit-product-description').value = product.data.description;
+              document.getElementById('edit-product-price').value = product.data.price;
+              document.getElementById('edit-product-sale-price').value = product.data.salePrice || '';
+              document.getElementById('edit-product-on-sale').checked = product.data.onSale;
+              document.getElementById('edit-product-stock').value = product.data.stock;
+              document.getElementById('edit-product-category').value = product.data.category;
+              document.getElementById('edit-product-brand').value = product.data.brand;
+              document.getElementById('edit-product-type').value = product.data.type;
+              document.getElementById('edit-product-country').value = product.data.country;
+              
+              // Show edit form
+              document.getElementById('edit-product-card').style.display = 'block';
+              // Scroll to edit form
+              document.getElementById('edit-product-card').scrollIntoView({ behavior: 'smooth' });
+            }
+          });
+        });
+        
+        document.querySelectorAll('#products-list button.delete').forEach(button => {
+          button.addEventListener('click', async () => {
+            const productId = button.dataset.id;
+            if (confirm('Are you sure you want to delete this product?')) {
+              const result = await fetchApi(`products/${productId}`, 'DELETE');
+              
+              if (result.success) {
+                alert('Product deleted successfully!');
+                loadProducts();
+              } else {
+                alert('Failed to delete product: ' + result.message);
+              }
+            }
+          });
+        });
+      }
+    }
+    
+    // Create Product Form Handler
+    document.getElementById('create-product-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('product-name').value,
+        description: document.getElementById('product-description').value,
+        price: parseFloat(document.getElementById('product-price').value),
+        stock: parseInt(document.getElementById('product-stock').value),
+        categoryId: document.getElementById('product-category').value,
+        brandId: document.getElementById('product-brand').value,
+        typeId: document.getElementById('product-type').value,
+        countryId: document.getElementById('product-country').value,
+        onSale: document.getElementById('product-on-sale').checked
+      };
+      
+      // Add sale price only if on sale
+      if (formData.onSale) {
+        formData.salePrice = parseFloat(document.getElementById('product-sale-price').value);
+      }
+      
+      try {
+        const result = await fetchApi('products', 'POST', formData);
+        
+        if (result.success) {
+          alert('Product created successfully!');
+          document.getElementById('create-product-form').reset();
+          loadProducts();
+        } else {
+          alert('Failed to create product: ' + result.message);
+        }
+      } catch (error) {
+        alert('Error creating product: ' + error.message);
+      }
+    });
+    
+    // Edit Product Form Handler
+    document.getElementById('edit-product-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const productId = document.getElementById('edit-product-id').value;
+      const formData = {
+        name: document.getElementById('edit-product-name').value,
+        description: document.getElementById('edit-product-description').value,
+        price: parseFloat(document.getElementById('edit-product-price').value),
+        stock: parseInt(document.getElementById('edit-product-stock').value),
+        categoryId: document.getElementById('edit-product-category').value,
+        brandId: document.getElementById('edit-product-brand').value,
+        typeId: document.getElementById('edit-product-type').value,
+        countryId: document.getElementById('edit-product-country').value,
+        onSale: document.getElementById('edit-product-on-sale').checked
+      };
+      
+      // Add sale price only if on sale
+      if (formData.onSale) {
+        formData.salePrice = parseFloat(document.getElementById('edit-product-sale-price').value);
+      }
+      
+      try {
+        const result = await fetchApi(`products/${productId}`, 'PUT', formData);
+        
+        if (result.success) {
+          alert('Product updated successfully!');
+          document.getElementById('edit-product-card').style.display = 'none';
+          loadProducts();
+        } else {
+          alert('Failed to update product: ' + result.message);
+        }
+      } catch (error) {
+        alert('Error updating product: ' + error.message);
+      }
+    });
+    
+    // Cancel Edit Product Button Handler
+    document.getElementById('cancel-edit-product').addEventListener('click', function() {
+      document.getElementById('edit-product-card').style.display = 'none';
+    });
+    
+    // Create Category Form Handler
+    document.getElementById('create-category-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('category-name').value,
+        description: document.getElementById('category-description').value
+      };
+      
+      try {
+        const result = await fetchApi('categories', 'POST', formData);
+        
+        if (result.success) {
+          alert('Category created successfully!');
+          document.getElementById('create-category-form').reset();
+          loadCategories();
+        } else {
+          alert('Failed to create category: ' + result.message);
+        }
+      } catch (error) {
+        alert('Error creating category: ' + error.message);
+      }
+    });
+    
+    // Create Brand Form Handler
+    document.getElementById('create-brand-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('brand-name').value,
+        description: document.getElementById('brand-description').value
+      };
+      
+      try {
+        const result = await fetchApi('brands', 'POST', formData);
+        
+        if (result.success) {
+          alert('Brand created successfully!');
+          document.getElementById('create-brand-form').reset();
+          loadBrands();
+        } else {
+          alert('Failed to create brand: ' + result.message);
+        }
+      } catch (error) {
+        alert('Error creating brand: ' + error.message);
+      }
+    });
+    
+    // Refresh buttons
+    document.getElementById('refresh-products').addEventListener('click', loadProducts);
+    document.getElementById('refresh-categories').addEventListener('click', loadCategories);
+    document.getElementById('refresh-brands').addEventListener('click', loadBrands);
+    
+    // Dashboard API test buttons
+    document.getElementById('get-products').addEventListener('click', async () => {
+      const data = await fetchApi('products/admin');
+      document.getElementById('response-display').textContent = JSON.stringify(data, null, 2);
+    });
+    
+    document.getElementById('get-categories').addEventListener('click', async () => {
+      const data = await fetchApi('categories');
+      document.getElementById('response-display').textContent = JSON.stringify(data, null, 2);
+    });
+    
+    document.getElementById('get-brands').addEventListener('click', async () => {
+      const data = await fetchApi('brands');
+      document.getElementById('response-display').textContent = JSON.stringify(data, null, 2);
+    });
+    
+    document.getElementById('get-types').addEventListener('click', async () => {
+      const data = await fetchApi('types');
+      document.getElementById('response-display').textContent = JSON.stringify(data, null, 2);
+    });
+    
+    document.getElementById('get-countries').addEventListener('click', async () => {
+      const data = await fetchApi('countries');
+      document.getElementById('response-display').textContent = JSON.stringify(data, null, 2);
+    });
+    
+    document.getElementById('get-orders').addEventListener('click', async () => {
+      const data = await fetchApi('orders/admin');
+      document.getElementById('response-display').textContent = JSON.stringify(data, null, 2);
+    });
+    
+    document.getElementById('get-users').addEventListener('click', async () => {
+      const data = await fetchApi('users/admin');
+      document.getElementById('response-display').textContent = JSON.stringify(data, null, 2);
+    });
+  </script>
+</body>
+</html>

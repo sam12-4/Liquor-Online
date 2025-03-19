@@ -2,7 +2,7 @@ import axios from 'axios';
 import Brand from '../models/Brand';
 import { ENDPOINTS } from './api/endpoints';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5001/api';
 
 class BrandService {
   /**

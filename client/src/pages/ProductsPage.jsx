@@ -905,17 +905,17 @@ const ProductsPage = () => {
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {displayedProducts.map((product) => (
-                      <div key={product.id} className="product-card group">
-                        <div className="relative">
+                      <div key={product.id} className="product-card group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
+                        <div className="relative h-48 overflow-hidden">
                           <Link to={`/products/${product.id}`}>
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                              className="w-full h-60 object-cover"
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                               onError={handleImageError}
                               data-category={product.category}
-                      />
-                    </Link>
+                            />
+                          </Link>
                           {product.salePrice && (
                             <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
                               Sale
@@ -927,36 +927,37 @@ const ProductsPage = () => {
                             </span>
                           )}
                           
-                          {/* Add to cart button on hover - Home page style */}
-                          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Add to cart button on hover - Same as Home page */}
+                          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-full group-hover:translate-y-0">
                             <button
+                              className="flex items-center justify-center bg-[#aa4c40] w-full py-2 text-sm text-white transition hover:bg-[#8a3d33]"
                               onClick={(e) => {
                                 e.preventDefault(); // Prevent navigation
                                 handleAddToCart(product);
                               }}
-                              className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md transition-colors transform hover:scale-105"
+                              aria-label={`Add ${product.name} to cart`}
                             >
-                              Add to Cart
+                              <FaShoppingCart className="mr-2" /> ADD TO CART
                             </button>
-                    </div>
-                  </div>
+                          </div>
+                        </div>
                         
-                        <div className="p-4 bg-white">
+                        <div className="p-4">
                           <div className="mb-2 flex justify-between">
                             <span className="text-sm text-gray-500">{product.category}</span>
                             <span className="text-sm text-gray-500">{product.brand}</span>
-              </div>
+                          </div>
                           
                           <Link to={`/products/${product.id}`}>
                             <h3 className="text-lg font-medium text-gray-900 hover:text-primary transition-colors mb-1">
                               {product.name}
                             </h3>
-                      </Link>
+                          </Link>
                           
                           <div className="flex items-center mb-2">
                             {renderStars(product.rating)}
                             <span className="text-sm text-gray-500 ml-1">({product.rating})</span>
-                    </div>
+                          </div>
                           
                           <div className="flex items-center justify-between mt-3">
                             <div>
@@ -964,13 +965,13 @@ const ProductsPage = () => {
                                 <div>
                                   <span className="text-lg font-semibold text-primary">${product.salePrice.toFixed(2)}</span>
                                   <span className="text-sm text-gray-500 line-through ml-2">${product.price.toFixed(2)}</span>
-                      </div>
+                                </div>
                               ) : (
                                 <span className="text-lg font-semibold text-gray-900">${product.price.toFixed(2)}</span>
                               )}
                             </div>
                             
-                      <div className="flex space-x-2">
+                            <div className="flex space-x-2">
                               <button 
                                 className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
                                 title="Add to Wishlist"
@@ -982,7 +983,7 @@ const ProductsPage = () => {
                                 <FaHeart className="text-gray-400 hover:text-red-500 transition-colors" />
                               </button>
                               <button 
-                                className="w-8 h-8 flex items-center justify-center bg-primary rounded-full hover:bg-primary-dark transition-colors"
+                                className="w-8 h-8 flex items-center justify-center bg-[#aa4c40] rounded-full hover:bg-[#8a3d33] transition-colors"
                                 title="Add to Cart"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -992,11 +993,11 @@ const ProductsPage = () => {
                                 <FaShoppingCart className="text-white" />
                               </button>
                             </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
                   
                   {/* Pagination */}
                   {totalPages > 1 && (

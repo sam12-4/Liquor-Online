@@ -90,10 +90,7 @@ const ProductsManagement = () => {
   
   // Update filtered products when filters change or products are loaded
   useEffect(() => {
-    console.log('Products state changed:', products);
-    
     if (products.length === 0) {
-      console.log('No products available to filter');
       return;
     }
     
@@ -102,15 +99,10 @@ const ProductsManagement = () => {
     // Simulate API delay for better UX
     const timeoutId = setTimeout(() => {
       const filtered = filterProducts(currentFilters, products);
-      console.log('Filtered products:', filtered);
       
       // Check for image issues in filtered products
       if (filtered.length > 0) {
         const productsWithoutImages = filtered.filter(p => !p.images || !Array.isArray(p.images) || p.images.length === 0);
-        if (productsWithoutImages.length > 0) {
-          console.warn(`${productsWithoutImages.length} products without images:`, 
-            productsWithoutImages.map(p => p.name));
-        }
       }
       
       // Apply sorting
@@ -124,7 +116,6 @@ const ProductsManagement = () => {
         return 0;
       });
       
-      console.log('Sorted products:', sortedProducts);
       setFilteredProducts(sortedProducts);
       setIsLoading(false);
       // Reset to first page when filters or sorting changes
@@ -163,7 +154,7 @@ const ProductsManagement = () => {
     if (selectedProducts.length === paginatedProducts.length) {
       setSelectedProducts([]);
     } else {
-      setSelectedProducts(paginatedProducts.map(product => product._id));
+      setSelectedProducts(paginatedProducts.map(product => product.id));
     }
   };
   
@@ -179,7 +170,7 @@ const ProductsManagement = () => {
         // await axios.post(`${API_URL}/products/bulk-delete`, { ids: selectedProducts });
         
         // For now, just remove them from the local state
-        setProducts(prev => prev.filter(product => !selectedProducts.includes(product._id)));
+        setProducts(prev => prev.filter(product => !selectedProducts.includes(product.id)));
         setSelectedProducts([]);
         alert(`${selectedProducts.length} products deleted successfully`);
       } catch (error) {
@@ -197,6 +188,29 @@ const ProductsManagement = () => {
     window.location.href = '/admin/products/create';
   };
   
+  // Handle product delete
+  const handleProductDelete = async (productId) => {
+    if (window.confirm(`Are you sure you want to delete this product?`)) {
+      setIsLoading(true);
+      
+      try {
+        // Call API to delete the product
+        await productService.deleteProduct(productId);
+        
+        // Remove from the local state
+        setProducts(prev => prev.filter(product => 
+          product.id !== productId && product._id !== productId
+        ));
+        alert('Product deleted successfully');
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Failed to delete product. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+  
   // Handle page change
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -210,23 +224,98 @@ const ProductsManagement = () => {
   
   // Find related entities helper function
   const findRelatedEntities = (product) => {
-    const productCategories = product.categoryIds
-      ? product.categoryIds.map(catId => 
-          categories.find(c => c._id === catId || c.id === catId)
-        ).filter(Boolean)
-      : [];
+    // Debugging
+    if (product.name && product.name.includes('Johnnie Walker')) {
+      console.log('Debug product:', { 
+        id: product.id, 
+        _id: product._id,
+        categoryIds: product.categoryIds
+      });
+    }
+
+    const productCategories = [];
     
-    const productBrand = brands.find(b => b._id === product.brandId || b.id === product.brandId);
+    // Try to find categories
+    if (product.categoryIds && Array.isArray(product.categoryIds)) {
+      // Case 1: categoryIds contains category objects directly
+      if (product.categoryIds.length > 0 && typeof product.categoryIds[0] === 'object') {
+        // Just use the category objects directly
+        productCategories.push(...product.categoryIds);
+      } 
+      // Case 2: categoryIds contains IDs as strings
+      else {
+        // Find the categories by ID
+        product.categoryIds.forEach(categoryId => {
+          const category = categories.find(c => 
+            c.id === categoryId || 
+            c._id === categoryId ||
+            (c.id && categoryId && c.id.toString() === categoryId.toString())
+          );
+          
+          if (category) {
+            productCategories.push(category);
+          }
+        });
+      }
+    }
+    
+    // Find brand
+    let productBrand = null;
+    if (product.brandId) {
+      // Handle both string ID and object with ID
+      const brandId = typeof product.brandId === 'object' ? product.brandId._id || product.brandId.id : product.brandId;
+      
+      // Try to find brand by ID
+      productBrand = brands.find(b => 
+        b.id === brandId || 
+        b._id === brandId ||
+        (b.id && brandId && b.id.toString() === brandId.toString())
+      );
+    }
     
     return { productCategories, productBrand };
   };
   
   // Add this function at the component level, before the return statement
   const getDefaultProductImage = (product) => {
-    // Check if product has categories
-    const category = product.categoryIds && product.categoryIds.length > 0 
-      ? product.categoryIds[0].slug 
-      : '';
+    // Check if product has categories and extract category slug properly
+    let categorySlug = '';
+    
+    if (product.categoryIds && Array.isArray(product.categoryIds) && product.categoryIds.length > 0) {
+      // First try to get the category object if categoryIds contains objects
+      let firstCategoryId;
+      
+      if (typeof product.categoryIds[0] === 'object') {
+        firstCategoryId = product.categoryIds[0]._id || product.categoryIds[0].id;
+      } else {
+        firstCategoryId = product.categoryIds[0];
+      }
+      
+      const firstCategory = categories.find(c => 
+        c.id === firstCategoryId || c._id === firstCategoryId
+      );
+      
+      if (firstCategory && firstCategory.slug) {
+        categorySlug = firstCategory.slug;
+      }
+    } else if (product.categoryId) {
+      // Try using categoryId if categoryIds is not available
+      let categoryId;
+      
+      if (typeof product.categoryId === 'object') {
+        categoryId = product.categoryId._id || product.categoryId.id;
+      } else {
+        categoryId = product.categoryId;
+      }
+      
+      const category = categories.find(c => 
+        c.id === categoryId || c._id === categoryId
+      );
+      
+      if (category && category.slug) {
+        categorySlug = category.slug;
+      }
+    }
     
     // Default image mapping based on category
     const categoryImages = {
@@ -239,7 +328,7 @@ const ProductsManagement = () => {
     };
     
     // Return category-specific image or a generic alcohol image
-    return categoryImages[category] || 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?q=80&w=300';
+    return categoryImages[categorySlug] || 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?q=80&w=300';
   };
   
   return (
@@ -377,7 +466,7 @@ const ProductsManagement = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {isLoading ? (
-                    <tr>
+                    <tr key="loading-row">
                       <td colSpan="7" className="px-4 py-4 text-center">
                         <div className="flex justify-center items-center">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -386,15 +475,16 @@ const ProductsManagement = () => {
                       </td>
                     </tr>
                   ) : filteredProducts.length === 0 ? (
-                    <tr>
+                    <tr key="no-products-row">
                       <td colSpan="7" className="px-4 py-4 text-center">
                         No products found matching your filters.
                       </td>
                     </tr>
                   ) : (
                     paginatedProducts.map(product => {
-                      // Find related entities
+                      // Find related entities with debug
                       const { productCategories, productBrand } = findRelatedEntities(product);
+                      console.log(`Product ${product.name}: Found ${productCategories.length} categories`);
                       
                       // Get default image based on product category
                       const defaultImage = getDefaultProductImage(product);
@@ -427,16 +517,16 @@ const ProductsManagement = () => {
                       
                       // For debugging
                       if (!productImage) {
-                        console.log(`No image found for product ${product.name}. Using default.`);
+                        // No default fallback is used
                       }
-                      
+                   
                       return (
-                        <tr key={product._id} className="hover:bg-gray-50">
+                        <tr key={product.id} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap">
                             <input 
                               type="checkbox" 
-                              checked={selectedProducts.includes(product._id)}
-                              onChange={() => handleProductSelect(product._id)}
+                              checked={selectedProducts.includes(product.id)}
+                              onChange={() => handleProductSelect(product.id)}
                             />
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
@@ -447,7 +537,6 @@ const ProductsManagement = () => {
                                 alt={productImageAlt} 
                                 className="h-12 w-12 object-cover mr-3 rounded"
                                 onError={(e) => {
-                                  console.log(`Image load error for ${product.name}, using default`);
                                   e.target.onerror = null;
                                   e.target.src = defaultImage;
                                 }}
@@ -468,14 +557,18 @@ const ProductsManagement = () => {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex flex-wrap gap-1">
-                              {productCategories.map(category => (
-                                <span 
-                                  key={category._id || category.id} 
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                                >
-                                  {category.name}
-                                </span>
-                              ))}
+                              {productCategories.length === 0 ? (
+                                <span className="text-gray-400">No categories</span>
+                              ) : (
+                                productCategories.map(category => (
+                                  <span 
+                                    key={category.id} 
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                  >
+                                    {category.name}
+                                  </span>
+                                ))
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
@@ -491,21 +584,17 @@ const ProductsManagement = () => {
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex space-x-2">
-                              <a 
-                                href={`/admin/products/${product._id}`}
-                                className="text-blue-600 hover:text-blue-900"
+                            <div className="flex items-center space-x-2">
+                              <a
+                                href={`/admin/products/${product.id || product._id}/edit`}
+                                className="text-blue-600 hover:text-blue-800"
                               >
                                 Edit
                               </a>
-                              <button 
-                                onClick={() => {
-                                  if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
-                                    handleProductSelect(product._id);
-                                    handleBulkDelete();
-                                  }
-                                }}
-                                className="text-red-600 hover:text-red-900"
+                              <button
+                                type="button"
+                                onClick={() => handleProductDelete(product.id || product._id)}
+                                className="text-red-600 hover:text-red-800"
                               >
                                 Delete
                               </button>
@@ -575,7 +664,7 @@ const ProductsManagement = () => {
                         ) {
                           return (
                             <button
-                              key={pageNumber}
+                              key={`page-${pageNumber}`}
                               onClick={() => handlePageChange(pageNumber)}
                               className={`relative inline-flex items-center px-4 py-2 border ${
                                 currentPage === pageNumber
@@ -595,7 +684,7 @@ const ProductsManagement = () => {
                         ) {
                           return (
                             <span
-                              key={pageNumber}
+                              key={`ellipsis-${pageNumber}`}
                               className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700"
                             >
                               ...

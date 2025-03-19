@@ -19,6 +19,7 @@ const Checkout = () => {
     password: '',
     paymentMethod: 'credit-card',
     sameShippingAddress: true,
+    isGuest: true,
   });
 
   const [cartItems] = useState([
@@ -48,8 +49,79 @@ const Checkout = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Checkout logic would go here
-    console.log('Checkout form submitted with:', formData);
+    
+    // Prepare order data
+    const orderData = {
+      orderItems: cartItems.map(item => ({
+        product: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        image: item.image
+      })),
+      shippingAddress: {
+        fullName: `${formData.firstName} ${formData.lastName}`,
+        address: formData.address1 + (formData.address2 ? `, ${formData.address2}` : ''),
+        city: formData.city,
+        postalCode: formData.postalCode,
+        country: formData.country,
+        province: formData.province
+      },
+      paymentMethod: formData.paymentMethod,
+      taxPrice: tax,
+      shippingPrice: shipping,
+      totalPrice: total
+    };
+    
+    // Add guest details if checking out as guest
+    if (formData.isGuest && !formData.createAccount) {
+      orderData.guestDetails = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone
+      };
+      
+      // For guest checkout
+      console.log('Guest checkout with:', orderData);
+      
+      // API call would go here (to /api/orders/guest endpoint)
+      // Example:
+      // axios.post('/api/orders/guest', orderData)
+      //   .then(response => {
+      //     // Store order tracking info in localStorage or state
+      //     localStorage.setItem('guestOrderNumber', response.data.data.order.orderNumber);
+      //     localStorage.setItem('guestOrderEmail', formData.email);
+      //     // Redirect to thank you/tracking page
+      //     navigate('/order-confirmation', { 
+      //       state: { 
+      //         orderNumber: response.data.data.order.orderNumber,
+      //         isGuest: true,
+      //         email: formData.email
+      //       } 
+      //     });
+      //   })
+      //   .catch(error => console.error('Error placing order:', error));
+      
+    } else if (formData.createAccount) {
+      // User wants to create an account
+      const userData = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password
+      };
+      
+      console.log('Create account and checkout:', userData, orderData);
+      
+      // Register then place order logic would go here
+      
+    } else {
+      // Existing user checkout
+      console.log('User checkout:', orderData);
+      
+      // API call for logged-in user would go here
+    }
+    
+    // For demo
     alert('Order placed successfully! (This is a demo)');
   };
 
@@ -302,24 +374,54 @@ const Checkout = () => {
               
               {/* Account Creation */}
               <div className="bg-white shadow-md rounded-lg p-6">
-                <div className="flex items-center mb-4">
-                  <input
-                    id="createAccount"
-                    name="createAccount"
-                    type="checkbox"
-                    checked={formData.createAccount}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                  />
-                  <label htmlFor="createAccount" className="ml-2 block text-sm text-neutral-dark">
-                    Create an account?
-                  </label>
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      id="isGuest"
+                      name="isGuest"
+                      type="radio"
+                      checked={formData.isGuest && !formData.createAccount}
+                      onChange={() => setFormData(prev => ({ ...prev, isGuest: true, createAccount: false }))}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <label htmlFor="isGuest" className="ml-2 block text-sm text-neutral-dark">
+                      Checkout as guest
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      id="createAccount"
+                      name="createAccount"
+                      type="radio"
+                      checked={formData.createAccount}
+                      onChange={() => setFormData(prev => ({ ...prev, createAccount: true, isGuest: false }))}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <label htmlFor="createAccount" className="ml-2 block text-sm text-neutral-dark">
+                      Create an account
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      id="existingAccount"
+                      name="existingAccount"
+                      type="radio"
+                      checked={!formData.isGuest && !formData.createAccount}
+                      onChange={() => setFormData(prev => ({ ...prev, isGuest: false, createAccount: false }))}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <label htmlFor="existingAccount" className="ml-2 block text-sm text-neutral-dark">
+                      Login to existing account
+                    </label>
+                  </div>
                 </div>
                 
                 {formData.createAccount && (
                   <div className="mt-4">
                     <label htmlFor="password" className="block text-sm font-medium text-neutral-dark mb-1">
-                      Create Account Password *
+                      Create Password *
                     </label>
                     <input
                       type="password"
@@ -328,12 +430,23 @@ const Checkout = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required={formData.createAccount}
-                      minLength="6"
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Password must be at least 6 characters long.
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      An account will be created with your email and password.
                     </p>
+                  </div>
+                )}
+                
+                {!formData.isGuest && !formData.createAccount && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded">
+                    <p className="text-sm mb-2">Please log in before proceeding with checkout:</p>
+                    <Link 
+                      to="/login" 
+                      className="inline-block bg-primary text-white py-2 px-4 rounded-md hover:bg-primary-dark transition-colors text-sm"
+                    >
+                      Go to Login Page
+                    </Link>
                   </div>
                 )}
               </div>

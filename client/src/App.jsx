@@ -1,8 +1,5 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { loadUser } from './actions/authActions';
-import { setAuthToken } from './utils/setAuthToken';
 
 // Components
 import Header from './components/layout/Header';
@@ -13,21 +10,16 @@ import ScrollToTop from './components/ScrollToTop';
 // Routes
 import { routes } from './routes';
 
+// Pages
+import ProductsManagement from './pages/admin/ProductsManagement';
+import ProductEdit from './pages/admin/ProductEdit';
+import Checkout from './pages/Checkout';
+import OrderTracking from './pages/OrderTracking';
+
 // CSS
 import './index.css';
 
-// Check for token on initial load
-if (localStorage.token) {
-  setAuthToken(localStorage.token);
-}
-
 const App = () => {
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(loadUser());
-  }, [dispatch]);
-
   return (
     <div className="app">
       <ScrollToTop />
@@ -46,6 +38,12 @@ const App = () => {
               />
             );
           })}
+          {/* Admin Routes */}
+          <Route path="/admin/products" element={<ProductsManagement />} />
+          <Route path="/admin/products/create" element={<ProductEdit />} />
+          <Route path="/admin/products/:id/edit" element={<ProductEdit />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-tracking" element={<OrderTracking />} />
         </Routes>
       </main>
       <Footer />

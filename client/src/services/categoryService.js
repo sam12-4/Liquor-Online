@@ -1,9 +1,13 @@
 import axios from 'axios';
-import Category from '../models/Category';
 import { ENDPOINTS } from './api/endpoints';
+import Category from '../models/Category';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5001/api';
 
+/**
+ * Service for category-related operations
+ * Authentication removed as requested
+ */
 class CategoryService {
   /**
    * Retrieves all categories from the backend API.
@@ -22,13 +26,8 @@ class CategoryService {
           
       return categoriesData.map(category => Category.fromJSON(category));
     } catch (error) {
-      // If endpoint doesn't exist (404), return empty array instead of throwing
-      if (error.response && error.response.status === 404) {
-        console.warn('Categories endpoint not found, returning empty array');
-        return [];
-      }
       console.error('Error fetching categories:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -48,13 +47,8 @@ class CategoryService {
         
       return Category.fromJSON(categoryData);
     } catch (error) {
-      // If endpoint doesn't exist (404), return null instead of throwing
-      if (error.response && error.response.status === 404) {
-        console.warn(`Category with ID ${id} not found`);
-        return null;
-      }
       console.error(`Error fetching category with ID ${id}:`, error);
-      throw error;
+      return null;
     }
   }
 
@@ -103,11 +97,6 @@ class CategoryService {
       await axios.delete(`${API_BASE_URL}${ENDPOINTS.CATEGORY_BY_ID(id)}`);
       return true;
     } catch (error) {
-      // If endpoint doesn't exist (404), log warning but don't throw
-      if (error.response && error.response.status === 404) {
-        console.warn(`Category with ID ${id} not found or already deleted`);
-        return true;
-      }
       console.error(`Error deleting category with ID ${id}:`, error);
       throw error;
     }

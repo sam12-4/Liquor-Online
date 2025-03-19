@@ -8,14 +8,12 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
-import Login from './pages/Login';
-import Register from './pages/Register';
 import AccountPage from './pages/AccountPage';
 import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 
-// Additional pages from the file system
+// Additional pages
 import ContactFaq from './pages/ContactFaq';
 import TrackOrder from './pages/TrackOrder';
 import Returns from './pages/Returns';
@@ -26,8 +24,7 @@ import PrivateCommercial from './pages/PrivateCommercial';
 import FreeDraw from './pages/FreeDraw';
 import Jobs from './pages/Jobs';
 
-// Admin pages
-import AdminLogin from './pages/admin/AdminLogin';
+// Admin pages (now accessible without authentication)
 import Dashboard from './pages/admin/Dashboard';
 import ProductsManagement from './pages/admin/ProductsManagement';
 import ProductEdit from './pages/admin/ProductEdit';
@@ -37,7 +34,6 @@ import AdminUsersPage from './pages/admin/UsersPage';
 import TaxonomyManagement from './pages/admin/TaxonomyManagement';
 import AdminSettingsPage from './pages/admin/SettingsPage';
 import AccountSettings from './pages/AccountSettings';
-import PasswordReset from './pages/PasswordReset';
 
 const routes = [
   // Public routes
@@ -54,27 +50,27 @@ const routes = [
     path: '/contact',
     component: Contact
   },
-  // {
-  //   path: '/products',
-  //   exact: true,
-  //   component: ProductsPage
-  // },
-  // {
-  //   path: '/products/:id',
-  //   component: ProductDetail
-  // },
-  // {
-  //   path: '/product-category/:category',
-  //   component: ProductsPage
-  // },
-  // {
-  //   path: '/brand/:brand',
-  //   component: ProductsPage
-  // },
-  // {
-  //   path: '/product-tag/:tag',
-  //   component: ProductsPage
-  // },
+  {
+    path: '/products',
+    exact: true,
+    component: ProductsPage
+  },
+  {
+    path: '/products/:id',
+    component: ProductDetail
+  },
+  {
+    path: '/product-category/:category',
+    component: ProductsPage
+  },
+  {
+    path: '/brand/:brand',
+    component: ProductsPage
+  },
+  {
+    path: '/product-tag/:tag',
+    component: ProductsPage
+  },
   {
     path: '/cart',
     component: Cart
@@ -82,23 +78,6 @@ const routes = [
   {
     path: '/checkout',
     component: Checkout
-  },
-  {
-    path: '/login',
-    component: Login
-  },
-  {
-    path: '/register',
-    component: Register
-  },
-  {
-    path: '/reset-password',
-    exact: true,
-    component: PasswordReset
-  },
-  {
-    path: '/reset-password/:userType',
-    component: PasswordReset
   },
   {
     path: '/account',
@@ -156,11 +135,7 @@ const routes = [
     component: Jobs
   },
   
-  // Admin routes
-  {
-    path: '/admin/login',
-    component: AdminLogin
-  },
+  // Admin routes (now accessible without authentication)
   {
     path: '/admin',
     exact: true,
